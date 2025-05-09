@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% load static %}
+{% load static task_tags %}
+
+{% block title %}Версия для печати{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .print-settings {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+    }
+    .print-settings label {
+        margin-right: 15px;
+        font-size: 14pt;
+        font-family: 'Times New Roman', serif;
+    }
+    .print-settings input[type="radio"],
+    .print-settings input[type="checkbox"] {
+        margin-right: 5px;
+    }
+    .print-settings button {
+        padding: 10px 20px;
+        background-color: #ff6f61;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14pt;
+        font-family: 'Times New Roman', serif;
+    }
+    .print-settings button:hover {
+        background-color: #e65b50;
+    }
+    .task-preview {
+        margin-bottom: 20px;
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    .task-preview h3 {
+        font-size: 16pt;
+        color: #ff6f61;
+        margin: 0 0 10px;
+        font-family: 'Times New Roman', serif;
+    }
+    .task-text, .solution-text, .answer-text {
+        font-family: 'Times New Roman', serif;
+        font-size: 14pt;
+        line-height: 1.5;
+    }
+    .task-text svg, .solution-text svg, .latex-formula svg {
+        max-width: 100%;
+        height: auto;
+        vertical-align: middle;
+    }
+    .inline-formula {
+        display: inline-block !important;
+        vertical-align: middle;
+    }
+    .display-formula, .complex-formula {
+        display: block !important;
+        margin: 10px auto;
+        text-align: center;
+    }
+    .task-image {
+        max-width: 300px;
+        margin-top: 10px;
+    }
+    .solution-text, .answer-text {
+        display: none;
+        margin-top: 10px;
+    }
+    .solution-text.active, .answer-text.active {
+        display: block;
+    }
+    .solution-step {
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="print-settings">
+    <h1>Версия для печати</h1>
+    <p>Настройте параметры PDF:</p>
+    <form method="GET" id="print-form" action="{% url 'tasks:pdf_tasks' subject=subject uuid=uuid %}">
+        {% for key, value in origin_params.items %}
+            {% if key != 'per_page' %}
+                <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endif %}
+        {% endfor %}
+        
+        <div style="margin-bottom: 15px;">
+            <h3>Ориентация:</h3>
+            <label>
+                <input type="radio" name="format" value="portrait" checked> Вертикальная
+            </label>
+            <label>
+                <input type="radio" name="format" value="landscape"> Горизонтальная
+            </label>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label>
+                <input type="checkbox" name="with_answers" id="with_answers" value="1">
+                С ответами
+            </label>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label>
+                <input type="checkbox" name="with_solutions" id="with_solutions" value="1">
+                С решениями
+            </label>
+        </div>
+
+        <button type="submit">Сгенерировать PDF</button>
+    </form>
+</div>
+
+<div id="tasks-preview">
+    {% for task in tasks %}
+        <div class="task-preview" data-task-id="{{ task.unique_id }}">
+            <h3>{{ forloop.counter }}. Задание {{ task.exam_line.number }}.</h3>
+            <div class="task-text">
+                {{ task.text_svg|safe|default:task.text }}
+                {% if task.latex_formula_svg %}
+                    <div class="latex-formula">
+                        {{ task.latex_formula_svg|safe }}
+                    </div>
+                {% endif %}
+                {% if task.image %}
+                    <img src="{{ task.image.url }}" alt="Изображение к заданию" class="task-image">
+                {% endif %}
+            </div>
+            {% if task.has_solution and task.solution_text_svg %}
+                <div class="solution-text">
+                    <strong>Решение:</strong>
+                    {% for step in task.solution_text_svg|split_steps %}
+                        <div class="solution-step">
+                            {{ step|safe }}
+                        </div>
+                    {% endfor %}
+                    {% for solution_image in task.solution_images.all %}
+                        <img src="{{ solution_image.image.url }}" alt="Изображение решения" class="task-image">
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% if task.answer %}
+                <div class="answer-text">
+                    <strong>Ответ:</strong> {{ task.answer }}
+                </div>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const withSolutionsCheckbox = document.getElementById('with_solutions');
+    const withAnswersCheckbox = document.getElementById('with_answers');
+
+    function updateTaskDisplay() {
+        const showSolutions = withSolutionsCheckbox.checked;
+        const showAnswers = withAnswersCheckbox.checked;
+        document.querySelectorAll('.task-preview').forEach(task => {
+            const solution = task.querySelector('.solution-text');
+            const answer = task.querySelector('.answer-text');
+            if (solution) {
+                solution.classList.toggle('active', showSolutions);
+            }
+            if (answer) {
+                answer.classList.toggle('active', showAnswers);
+            }
+        });
+    }
+
+    withSolutionsCheckbox.addEventListener('change', updateTaskDisplay);
+    withAnswersCheckbox.addEventListener('change', updateTaskDisplay);
+
+    // Классификация SVG
+    document.querySelectorAll('.task-text, .solution-text, .latex-formula').forEach(container => {
+        const svgs = container.querySelectorAll('svg');
+        svgs.forEach(svg => {
+            const latexType = svg.getAttribute('data-latex-type') || 'inline';
+            svg.classList.add(`${latexType}-formula`);
+        });
+    });
+
+    updateTaskDisplay();
+});
+</script>
+{% endblock %}

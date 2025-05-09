@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Статистика посещений - FoxyEGE.ru{% endblock %}
+{% block og_title %}Статистика посещений - FoxyEGE.ru{% endblock %}
+{% block og_description %}Узнайте, какие страницы FoxyEGE.ru наиболее популярны среди пользователей.{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <h1>Статистика посещений</h1>
+    <p>Общее количество посещений сайта: <strong>{{ total_visits }}</strong></p>
+    <h2>Популярные страницы</h2>
+    {% if stats %}
+        <table class="stats-table">
+            <thead>
+                <tr>
+                    <th>Страница</th>
+                    <th>Количество посещений</th>
+                    <th>Последнее посещение</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in stats %}
+                    <tr>
+                        <td>{{ stat.url }}</td>
+                        <td>{{ stat.visit_count }}</td>
+                        <td>{{ stat.last_visited|date:"d.m.Y H:i" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Пока нет данных о посещениях.</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+.content-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    line-height: 1.6;
+}
+.stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+.stats-table th, .stats-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+.stats-table th {
+    background-color: #f2f2f2;
+}
+.stats-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+.stats-table tr:hover {
+    background-color: #f5f5f5;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+{% load static custom_filters %}
+
+{% block title %}
+    Избранные задания - {{ subject|capfirst }}
+{% endblock %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="{% static 'css/task_list.css' %}">
+    <style>
+        .task-list {
+            list-style: none;
+            padding: 0;
+        }
+        .task-item {
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .task-item:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .favorite-button {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #ff6f61;
+            cursor: pointer;
+            padding: 5px;
+            margin: 0 5px;
+            transition: color 0.3s ease;
+        }
+        .favorite-button:hover {
+            opacity: 0.8;
+        }
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .task-title {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        .task-image-container {
+            margin: 10px 0;
+            text-align: center;
+        }
+        .task-image {
+            max-width: 100%;
+            height: auto;
+        }
+        .empty-message {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2em;
+            color: #666;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <h1>Избранные задания</h1>
+
+    <div id="generator-settings">
+        <h2>Настройте фильтр</h2>
+        <form method="GET" action="{% url 'tasks:favorite_tasks' subject=subject %}">
+            <div class="filter-item">
+                <button type="button" class="toggle-button" data-target="parts">Части экзамена</button>
+                <div id="parts" class="filter-section" style="display: none;">
+                    <ul class="filter-options">
+                        <li>
+                            <input type="radio" name="exam_part" value="" id="exam_part_all" {% if not request.GET.exam_part %}checked{% endif %}>
+                            <label for="exam_part_all">Все части</label>
+                        </li>
+                        {% for part in exam_parts %}
+                            <li>
+                                <input type="radio" name="exam_part" value="{{ part.id }}" id="exam_part_{{ part.id }}" {% if request.GET.exam_part == part.id|stringformat:"s" %}checked{% endif %}>
+                                <label for="exam_part_{{ part.id }}">{{ part.name }}</label>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="filter-item">
+                <button type="button" class="toggle-button" data-target="exam_lines">Задания экзамена</button>
+                <div id="exam_lines" class="filter-section" style="display: none;">
+                    <ul class="filter-options">
+                        <li>
+                            <input type="radio" name="exam_line" value="" id="exam_line_all" {% if not request.GET.exam_line %}checked{% endif %}>
+                            <label for="exam_line_all">Все задания</label>
+                        </li>
+                        {% for line in exam_lines %}
+                            <li>
+                                <input type="radio" name="exam_line" value="{{ line.id }}" id="exam_line_{{ line.id }}" {% if request.GET.exam_line == line.id|stringformat:"s" %}checked{% endif %}>
+                                <label for="exam_line_{{ line.id }}">Задание {{ line.number }}</label>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="filter-item">
+                <button type="button" class="toggle-button" data-target="topics">Темы</button>
+                <div id="topics" class="filter-section" style="display: none;">
+                    <ul class="filter-options">
+                        <li>
+                            <input type="radio" name="topic" value="" id="topic_all" {% if not request.GET.topic %}checked{% endif %}>
+                            <label for="topic_all">Все темы</label>
+                        </li>
+                        {% for topic in topics %}
+                            <li>
+                                <input type="radio" name="topic" value="{{ topic.id }}" id="topic_{{ topic.id }}" {% if request.GET.topic == topic.id|stringformat:"s" %}checked{% endif %}>
+                                <label for="topic_{{ topic.id }}">{{ topic.name }}</label>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="filter-item">
+                <button type="button" class="toggle-button" data-target="subtopics">Подтемы</button>
+                <div id="subtopics" class="filter-section" style="display: none;">
+                    <ul class="filter-options">
+                        <li>
+                            <input type="radio" name="subtopic" value="" id="subtopic_all" {% if not request.GET.subtopic %}checked{% endif %}>
+                            <label for="subtopic_all">Все подтемы</label>
+                        </li>
+                        {% for subtopic in subtopics %}
+                            <li>
+                                <input type="radio" name="subtopic" value="{{ subtopic.id }}" id="subtopic_{{ subtopic.id }}" {% if request.GET.subtopic == subtopic.id|stringformat:"s" %}checked{% endif %}>
+                                <label for="subtopic_{{ subtopic.id }}">{{ subtopic.name }}</label>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="filter-item">
+                <button type="button" class="toggle-button" data-target="sources">Источники</button>
+                <div id="sources" class="filter-section" style="display: none;">
+                    <ul class="filter-options">
+                        <li>
+                            <input type="radio" name="source" value="" id="source_all" {% if not request.GET.source %}checked{% endif %}>
+                            <label for="source_all">Все источники</label>
+                        </li>
+                        {% for source in sources %}
+                            <li>
+                                <input type="radio" name="source" value="{{ source.id }}" id="source_{{ source.id }}" {% if request.GET.source == source.id|stringformat:"s" %}checked{% endif %}>
+                                <label for="source_{{ source.id }}">{{ source.name }}</label>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="filter-item">
+                <label for="search_text">Поиск по тексту:</label>
+                <input type="text" name="search_text" id="search_text" value="{{ request.GET.search_text|default:'' }}" placeholder="Введите текст для поиска">
+            </div>
+
+            <div class="filter-item">
+                <label for="per_page">Заданий на странице:</label>
+                <select name="per_page" id="per_page" onchange="this.form.submit()">
+                    <option value="20" {% if per_page == "20" %}selected{% endif %}>20</option>
+                    <option value="50" {% if per_page == "50" %}selected{% endif %}>50</option>
+                    <option value="100" {% if per_page == "100" %}selected{% endif %}>100</option>
+                </select>
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="filter-button">Применить фильтр</button>
+                <a href="{% url 'tasks:favorite_tasks' subject=subject %}" class="filter-button reset-button">Сбросить фильтры</a>
+            </div>
+        </form>
+
+        {% if request.GET %}
+            <div class="selected-filters">
+                <h3>Выбранные фильтры:</h3>
+                <ul>
+                    {% if request.GET.exam_part %}
+                        <li>Часть экзамена: {% with part=exam_parts|get_item:request.GET.exam_part %}{{ part.name|default:"Все части" }}{% endwith %}</li>
+                    {% endif %}
+                    {% if request.GET.exam_line %}
+                        <li>Задание: {% with line=exam_lines|get_item:request.GET.exam_line %}{{ line|default:"Все задания" }}{% endwith %}</li>
+                    {% endif %}
+                    {% if request.GET.topic %}
+                        <li>Тема: {% with topic=topics|get_item:request.GET.topic %}{{ topic.name|default:"Все темы" }}{% endwith %}</li>
+                    {% endif %}
+                    {% if request.GET.subtopic %}
+                        <li>Подтема: {% with subtopic=subtopics|get_item:request.GET.subtopic %}{{ subtopic.name|default:"Все подтемы" }}{% endwith %}</li>
+                    {% endif %}
+                    {% if request.GET.source %}
+                        <li>Источник: {% with source=sources|get_item:request.GET.source %}{{ source.name|default:"Все источники" }}{% endwith %}</li>
+                    {% endif %}
+                    {% if request.GET.search_text %}
+                        <li>Поиск по тексту: {{ request.GET.search_text }}</li>
+                    {% endif %}
+                    <li>Заданий на странице: {{ per_page }}</li>
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+
+    <hr>
+    
+    {% if tasks %}
+        <ul class="task-list">
+            {% for task in tasks %}
+                <li class="task-item">
+                    <div class="task-header">
+                        <span class="task-title">
+                            <a href="{% url 'tasks:task_detail' subject=subject unique_id=task.unique_id %}">
+                                {{ task.exam_line|default:"Не указано" }}, №{{ task.unique_id }}
+                            </a>
+                        </span>
+                        <button class="favorite-button" data-task-id="{{ task.unique_id }}">★</button>
+                    </div>
+                    <div class="task-content">
+                        {{ task.text_svg|safe|default:task.text|safe }}
+                        {% if task.image %}
+                            <div class="task-image-container">
+                                <img 
+                                    src="{{ task.image.url }}" 
+                                    alt="Изображение к заданию" 
+                                    class="task-image"
+                                    {% if task.exam_line.number == 1 %}
+                                        style="max-width: 100px; height: auto;"
+                                    {% elif task.exam_line.number == 2 %}
+                                        style="max-width: 400px; height: auto;"
+                                    {% elif task.exam_line.number == 3 %}
+                                        style="max-width: 100px; height: auto;"
+                                    {% elif task.exam_line.number == 8 %}
+                                        style="max-width: 700px; height: auto;"
+                                    {% elif task.exam_line.number == 11 %}
+                                        style="max-width: 300px; height: auto;"
+                                    {% else %}
+                                        style="max-width: 100%; height: auto;"
+                                    {% endif %}
+                                >
+                            </div>
+                        {% endif %}
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+        {% include "tasks/pagination.html" %}
+    {% else %}
+        <p class="empty-message">У вас пока нет избранных заданий.</p>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Получаем CSRF токен из cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrfToken = getCookie('csrftoken');
+        // Обработчик для кнопок избранного
+        document.querySelectorAll('.favorite-button').forEach(button => {
+            button.addEventListener('click', async function(e) {
+                e.preventDefault();
+                const taskId = this.getAttribute('data-task-id');
+                const formData = new URLSearchParams();
+                formData.append('task_id', taskId);
+
+                try {
+                    const response = await fetch("{% url 'tasks:toggle_favorite' subject=subject %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: formData.toString(),
+                        credentials: 'same-origin'
+                    });
+
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                        return;
+                    }
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        throw new TypeError("Ожидался JSON!");
+                    }
+
+                    const data = await response.json();
+                    if (data.success) {
+                        // Удаляем задание из списка, так как это страница избранного
+                        const taskItem = this.closest('.task-item');
+                        taskItem.style.opacity = '0';
+                        setTimeout(() => {
+                            taskItem.remove();
+                            // Если больше нет заданий, показываем сообщение
+                            if (document.querySelectorAll('.task-item').length === 0) {
+                                const emptyMessage = document.createElement('p');
+                                emptyMessage.className = 'empty-message';
+                                emptyMessage.textContent = 'У вас пока нет избранных заданий.';
+                                document.querySelector('.task-list').replaceWith(emptyMessage);
+                            }
+                        }, 300);
+
+                        const messageDiv = document.createElement('div');
+                        messageDiv.textContent = data.message;
+                        messageDiv.style.position = 'fixed';
+                        messageDiv.style.top = '20px';
+                        messageDiv.style.right = '20px';
+                        messageDiv.style.backgroundColor = '#4CAF50';
+                        messageDiv.style.color = 'white';
+                        messageDiv.style.padding = '15px';
+                        messageDiv.style.borderRadius = '5px';
+                        messageDiv.style.zIndex = '1000';
+                        
+                        document.body.appendChild(messageDiv);
+                        
+                        setTimeout(() => {
+                            messageDiv.remove();
+                        }, 3000);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Произошла ошибка при обновлении избранного');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

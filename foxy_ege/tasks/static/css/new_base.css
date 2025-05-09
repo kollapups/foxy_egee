@@ -1,0 +1,521 @@
+:root {
+    --header-height: 60px;
+    --primary-color: #ff6f61;
+    --hover-color: #ff9a8b;
+    --background-light: #f9f9f9;
+    --background-white: #fff;
+    --text-color: #4d4d4d;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    font-size: 15px;
+}
+
+.site-header {
+    padding: 10px 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 1200;
+}
+
+.header-container {
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.header-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-top .logo img {
+    height: 30px;
+}
+
+.header-top h1 .logo {
+    font-size: 20px;
+    text-decoration: none;
+    color: var(--primary-color);
+    height: 10px;
+}
+
+.header-nav {
+    display: flex;
+    gap: 10px;
+}
+
+.header-nav a {
+    color: #000000;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.header-nav a:hover {
+    background-color: #ffe6ea;
+    color: var(--primary-color);
+}
+
+.header-nav-mobile {
+    display: none;
+    order: 2;
+}
+
+/* Новый контейнер для привязки списка к кнопке */
+.tools-item {
+    position: relative; /* Ограничивает область позиционирования .tools-list */
+    display: inline-block; /* Сохраняет размеры кнопки */
+}
+
+.tools-toggle {
+    display: inline-block; /* Как в .toggle-button */
+    padding: 8px 12px;
+    background-color: var(--primary-color);
+    color: var(--background-white);
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    z-index: 1300;
+    white-space: nowrap; /* Текст не переносится */
+    margin-left: 100px;
+}
+
+/* Стрелка для кнопки, как в .toggle-button */
+.tools-toggle::after {
+    content: " ▼";
+    margin-left: 8px;
+    transition: transform 0.3s ease;
+    display: inline-block;
+}
+
+.tools-toggle[aria-expanded="true"]::after {
+    transform: rotate(180deg);
+}
+
+.tools-toggle:hover {
+    background-color: var(--hover-color);
+}
+
+.tools-list {
+    display: none;
+    list-style: none;
+    background-color: var(--background-white);
+    border: 1px solid #dddddd;
+    border-radius: 5px;
+    position: absolute;
+    top: 100%;
+    left: 0; /* Выравнивание по левому краю кнопки */
+    min-width: 200px; /* Как в .filter-section */
+    max-height: 200px; /* Ограничение высоты, как в .filter-section */
+    overflow-y: auto; /* Прокрутка, если много пунктов */
+    z-index: 1300;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 10px; /* Как в .filter-section */
+    margin-top: 5px; /* Отступ сверху */
+}
+
+.tools-list.active {
+    display: block;
+}
+
+.tools-list li a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 8px 10px;
+    display: block;
+    transition: background-color 0.3s ease;
+}
+
+.tools-list li a:hover {
+    background-color: #ffe6ea;
+}
+
+.subject-display {
+    text-align: center;
+    color: var(--primary-color);
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.subjects-list {
+    display: flex;
+    flex-wrap: wrap;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    gap: 12px;
+    justify-content: center;
+    z-index: 1400;
+}
+
+.subjects-list li a {
+    display: block;
+    padding: 10px 18px;
+    color: #333;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 550;
+    background-color: var(--background-white);
+    border-radius: 6px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.subjects-list li a:hover {
+    color: var(--primary-color);
+    background-color: #fff5f5;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.subjects-list li a.active {
+    color: var(--background-white);
+    background-color: var(--primary-color);
+    box-shadow: 0 4px 8px rgba(255, 111, 97, 0.3);
+}
+
+.subjects-toggle {
+    display: none;
+    background-color: var(--primary-color);
+    color: var(--background-white);
+    border: none;
+    padding: 8px 12px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 1300;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+}
+
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--background-white);
+    padding: 25px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 550px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.task-image[data-exam-line="1"],
+.task-image[data-exam-line="2"],
+.task-image[data-exam-line="3"],
+.task-image[data-exam-line="8"],
+.task-image[data-exam-line="11"] {
+    max-width: 150px;
+}
+
+.sidebar {
+    z-index: 1100;
+    border-radius: 8px;
+    transition: transform 0.3s ease;
+    margin-left: 30px;
+    margin-right: 10px;
+    box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.1);
+    background-color: var(--background-white);
+    width: 150px;
+}
+
+.sidebar.active {
+    transform: translateX(0);
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 20px;
+    margin: 0;
+}
+
+.sidebar ul li a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+    display: block;
+    padding: 10px;
+}
+
+.sidebar ul li a:hover {
+    background-color: #ffe6ea;
+}
+
+.content-wrapper {
+    display: flex;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 15px;
+    box-sizing: border-box;
+}
+
+.burger-menu {
+    display: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #333;
+    transition: color 0.3s ease;
+    order: 0;
+    z-index: 1300;
+}
+
+.burger-menu:hover {
+    color: var(--primary-color);
+}
+
+.main-content {
+    margin-left: 10px;
+    flex: 1;
+}
+
+/* Корзина для печати */
+#print-cart {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: none; /* ДОРАБОТАТЬ */
+}
+
+#print-cart-toggle {
+    background-color: #ff6f61;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+}
+
+#print-cart-toggle:hover {
+    background-color: #ff9a8b;
+}
+
+#print-cart-count {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #ffd700;
+    color: #000;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.print-cart-content {
+    display: none;
+    position: absolute;
+    bottom: 60px;
+    right: 0;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.print-cart-content h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: #ff6f61;
+}
+
+.print-cart-content ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 10px 0;
+}
+
+.print-cart-content li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.print-cart-content li a {
+    color: #ff6f61;
+    text-decoration: none;
+}
+
+.print-cart-content li a:hover {
+    text-decoration: underline;
+}
+
+.print-cart-remove {
+    background: none;
+    border: none;
+    color: #ff6f61;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.print-cart-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.print-cart-button {
+    background-color: #ff6f61;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 3px 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+    display: none; /* ДОРАБОТАТЬ */
+}
+
+.print-cart-button:hover {
+    background-color: #ff9a8b;
+}
+
+@media (max-width: 768px) {
+    .site-header {
+        margin: 0;
+        border-radius: 0;
+        width: 100%;
+        background-color: var(--background-white);
+        z-index: 1200;
+    }
+
+    .header-top {
+        padding: 0 15px;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-nav {
+        display: none;
+    }
+
+    .header-nav-mobile {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 1300;
+    }
+
+    .header-top h1 {
+        flex: 1;
+        text-align: left;
+    }
+
+    .burger-menu {
+        display: block;
+        padding: 10px;
+    }
+
+    .subjects-nav {
+        margin: 0;
+        border-radius: 0;
+        padding: 10px 15px;
+        background-color: var(--background-light);
+        z-index: 1300;
+    }
+
+    .subjects-toggle {
+        display: block;
+        width: 100%;
+        text-align: center;
+    }
+
+    .subjects-list {
+        display: none;
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px 0;
+        background-color: var(--background-white);
+        border-radius: 5px;
+    }
+
+    .subjects-list.active {
+        display: flex;
+    }
+
+    .subjects-list li a {
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    .content-wrapper {
+        flex-direction: column;
+        margin: 0;
+    }
+
+    .sidebar {
+        position: fixed;
+        left: 0;
+        width: 150px;
+        max-width: none;
+        height: 100vh;
+        transform: translateX(-100%);
+        z-index: 1100;
+        background-color: var(--background-white);
+        box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.1);
+        margin: 0;
+    }
+
+    .sidebar.active {
+        transform: translateX(0);
+    }
+
+    .sidebar ul li a {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    .main-content {
+        padding: 10px;
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .subject-display {
+        font-size: 14px;
+    }
+}

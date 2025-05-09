@@ -1,0 +1,500 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Создание домашних заданий - {{ subject|title }}
+{% endblock %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="{% static 'css/teacher_homework.css' %}">
+    <link rel="stylesheet" href="{% static 'css/generate_task.css' %}">
+    {% endblock %}
+
+{% block content %}
+    <h1>Создание домашних заданий - {{ subject|title }}</h1>
+
+    <div class="tabs">
+        <button class="tab-button active" data-tab="create">Создать ДЗ</button>
+        <button class="tab-button" data-tab="assigned">Ваши домашние задания</button>
+    </div>
+
+    <div id="create" class="tab-content active">
+        <div class="homework-form">
+            <form method="post" enctype="multipart/form-data" action="{% url 'users:create_homework' subject=subject %}" id="homeworkForm">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="title">Название (необязательно):</label>
+                        <input type="text" name="title" id="title" placeholder="Если не указано, будет сгенерировано">
+                    </div>
+                    <div class="form-group">
+                        <label for="due_date">Срок сдачи (необязательно):</label>
+                        <input type="datetime-local" name="due_date" id="due_date">
+                    </div>
+                    <div class="form-group">
+                        <label>Тип задания:</label>
+                        <select name="homework_type" id="homework-type" required>
+                            <option value="" selected disabled>Выберите тип</option>
+                            <option value="upload" {% if homework_type == "upload" %}selected{% endif %}>Загрузить свои задания</option>
+                            <option value="manual" {% if homework_type == "manual" %}selected{% endif %}>Выбрать вручную из базы</option>
+                            <option value="random" {% if homework_type == "random" %}selected{% endif %}>Выбрать случайно из базы</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="description">Описание (необязательно):</label>
+                    <textarea name="description" id="description" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Ученики:</label>
+                    <ul class="student-list">
+                        {% for student in students %}
+                            <li>
+                                <input type="checkbox" name="students" value="{{ student.id }}"
+                                    {% if student.id|stringformat:"s" in selected_students %}checked{% endif %}>
+                                <span>{{ student.display_name|default:student.username }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div id="upload-section" style="display: {% if homework_type == 'upload' %}block{% else %}none{% endif %};">
+                    <label>Загрузите файлы (до 10, максимум 5 МБ каждый):</label>
+                    <input type="file" name="task_files" accept=".pdf,.docx,.jpg,.png" multiple>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="image_size">Максимальный размер изображения:</label>
+                            <select name="image_size" id="image_size">
+                                <option value="100">Маленький (100px)</option>
+                                <option value="150" selected>Средний (150px)</option>
+                                <option value="300">Большой (300px)</option>
+                                <option value="700">Очень большой (700px)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Количество заданий для таблицы:</label>
+                            <input type="number" name="task_count" min="1">
+                            <button type="button" id="generate-answer-table" class="btn">Создать таблицу</button>
+                        </div>
+                    </div>
+                    <div id="answer-table-container">
+                        <table id="answer-table" style="display: none; width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr>
+                                    <th>№ задания</th>
+                                    <th>Правильный ответ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="answer-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="filter-section" style="display: {% if homework_type == 'manual' or homework_type == 'random' %}block{% else %}none{% endif %};">
+                    <h3>Настройте выбор заданий</h3>
+                    <input type="hidden" name="homework_type" id="hidden-homework-type" value="{{ homework_type }}">
+                    <div class="filter-item">
+                        <label><input type="checkbox" id="select-all" name="select_all"> Выбрать все</label>
+                    </div>
+                    <div class="filter-item">
+                        <button type="button" class="toggle-button" data-target="parts">Части экзамена</button>
+                        <div id="parts" class="filter-section">{{ form.parts }}</div>
+                    </div>
+                    <div class="filter-item">
+                        <button type="button" class="toggle-button" data-target="exam_lines">Задания экзамена</button>
+                        <div id="exam_lines" class="filter-section">{{ form.exam_lines }}</div>
+                    </div>
+                    <div class="filter-item">
+                        <button type="button" class="toggle-button" data-target="topics">Темы</button>
+                        <div id="topics" class="filter-section">{{ form.topics }}</div>
+                    </div>
+                    <div class="filter-item">
+                        <button type="button" class="toggle-button" data-target="subtopics">Подтемы</button>
+                        <div id="subtopics" class="filter-section">{{ form.subtopics }}</div>
+                    </div>
+                    <div class="filter-item">
+                        <button type="button" class="toggle-button" data-target="sources">Источники</button>
+                        <div id="sources" class="filter-section">{{ form.sources }}</div>
+                    </div>
+                    <div id="task-count-container" class="filter-item" style="display: {% if homework_type == 'random' %}block{% else %}none{% endif %};">
+                        <label for="id_task_count">Количество заданий:</label>
+                        <input type="number" name="task_count" id="id_task_count" value="{{ form.task_count.value|default:'1' }}" min="1" required>
+                    </div>
+                    <div class="filter-item">
+                        <label for="id_search_text">Поиск по тексту:</label>
+                        <input type="text" name="search_text" id="id_search_text" value="{{ request.GET.search_text|default:'' }}">
+                    </div>
+                    <div class="filter-actions">
+                        <button type="submit" formmethod="get" class="btn" id="apply-filter">Применить фильтр</button>
+                        <a href="{% url 'users:create_homework' subject=subject %}" class="btn">Сбросить фильтры</a>
+                    </div>
+                </div>
+
+                {% if tasks and homework_type != 'random' %}
+                    <h2>Отфильтрованные задания</h2>
+                    <ul class="task-list">
+                        {% for task in tasks %}
+                            <li>
+                                <a href="{% url 'tasks:task_detail' subject=subject unique_id=task.unique_id %}">
+                                    {{ task.exam_line }}, (№{{ task.unique_id }})
+                                </a>
+                                <p>{{ task.text|safe|truncatewords:20 }}</p>
+                                {% if task.image %}
+                                    <div class="task-image-container">
+                                        <img 
+                                            src="{{ task.image.url }}" 
+                                            alt="Изображение к заданию" 
+                                            class="task-image"
+                                            {% if task.exam_line.number == 1 %}
+                                                style="max-width: 100px; height: auto;"
+                                            {% elif task.exam_line.number == 2 %}
+                                                style="max-width: 400px; height: auto;"
+                                            {% elif task.exam_line.number == 3 %}
+                                                style="max-width: 100px; height: auto;"
+                                            {% elif task.exam_line.number == 8 %}
+                                                style="max-width: 700px; height: auto;"
+                                            {% elif task.exam_line.number == 11 %}
+                                                style="max-width: 300px; height: auto;"
+                                            {% else %}
+                                                style="max-width: 100%; height: auto;"
+                                            {% endif %}
+                                        >
+                                    </div>
+                                {% endif %}
+                                <button type="button" class="btn add-task-btn" data-task-id="{{ task.unique_id }}">Добавить</button>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <div class="pagination">
+                        {% if tasks.has_previous %}
+                            <a href="?page={{ tasks.previous_page_number }}&homework_type={{ homework_type }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Предыдущая</a>
+                        {% endif %}
+                        <span class="current">Страница {{ tasks.number }} из {{ tasks.paginator.num_pages }}</span>
+                        {% if tasks.has_next %}
+                            <a href="?page={{ tasks.next_page_number }}&homework_type={{ homework_type }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Следующая</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                <div id="cart-container" style="display: {% if homework_type == 'manual' or homework_type == 'random' %}block{% else %}none{% endif %};">
+                    <div class="cart">
+                        <h3>Корзина заданий</h3>
+                        <button type="button" class="btn btn-danger" id="clear-cart-btn">Очистить корзину</button>
+                        <ul id="cart-list">
+                            {% if selected_tasks %}
+                                {% for task in selected_tasks %}
+                                    <li data-task-id="{{ task.unique_id }}">
+                                        <a href="{% url 'tasks:task_detail' subject=subject unique_id=task.unique_id %}">
+                                            Задача {{ task.unique_id }}: {{ task.text|truncatewords:20 }}
+                                        </a>
+                                        <div>
+                                            {% if homework_type == 'random' %}
+                                                <button type="button" class="btn btn-refresh refresh-task-btn" data-task-id="{{ task.unique_id }}">Обновить</button>
+                                            {% endif %}
+                                            <button type="button" class="btn btn-danger remove-task-btn" data-task-id="{{ task.unique_id }}">Удалить</button>
+                                        </div>
+                                    </li>
+                                {% endfor %}
+                            {% else %}
+                                <li id="cart-empty-message">Корзина пуста</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+
+                {% if error_message %}
+                    <p style="color: red;">{{ error_message }}</p>
+                {% endif %}
+
+                <button type="submit" name="save_homework" class="btn">Сохранить ДЗ</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="assigned" class="tab-content">
+        <h2>Ваши домашние задания</h2>
+        {% if assigned_homeworks %}
+            <ul class="homework-list">
+                {% for homework in assigned_homeworks %}
+                    <li>
+                        <div>
+                            <strong>{{ homework.title|default:"Без названия" }}</strong> (Тип: {{ homework.get_homework_type_display }})
+                            <p>Создано: {{ homework.created_at }} | Срок: {{ homework.due_date|default:"Не указан" }}</p>
+                        </div>
+                        <div>
+                            <a href="{% url 'users:homework_detail' subject=subject homework_id=homework.id %}" class="btn">Подробнее</a>
+                            <button type="button" class="btn btn-danger delete-homework" data-homework-id="{{ homework.id }}">Удалить</button>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Вы еще не задали домашние задания.</p>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Teacher Homework DOM loaded');
+
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(this.dataset.tab).classList.add('active');
+                });
+            });
+                document.querySelectorAll('.toggle-button').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const targetId = this.getAttribute('data-target');
+                        const targetSection = document.getElementById(targetId);
+                        const isExpanded = this.getAttribute('aria-expanded') === 'true';
+            
+                        // Закрываем все открытые секции
+                        document.querySelectorAll('.filter-section').forEach(section => {
+                            section.style.display = 'none';
+                        });
+                        document.querySelectorAll('.toggle-button').forEach(btn => {
+                            btn.setAttribute('aria-expanded', 'false');
+                        });
+            
+                        // Открываем или закрываем текущую секцию
+                        if (!isExpanded) {
+                            targetSection.style.display = 'block';
+                            this.setAttribute('aria-expanded', 'true');
+                        }
+                    });
+                });
+            
+                // Закрытие фильтров при клике вне
+                document.addEventListener('click', function(e) {
+                    if (!e.target.closest('.filter-item')) {
+                        document.querySelectorAll('.filter-section').forEach(section => {
+                            section.style.display = 'none';
+                        });
+                        document.querySelectorAll('.toggle-button').forEach(btn => {
+                            btn.setAttribute('aria-expanded', 'false');
+                        });
+                    }
+                });
+            const homeworkTypeSelect = document.getElementById('homework-type');
+            const hiddenHomeworkType = document.getElementById('hidden-homework-type');
+            const uploadSection = document.getElementById('upload-section');
+            const filterSection = document.getElementById('filter-section');
+            const taskCountContainer = document.getElementById('task-count-container');
+            const cartContainer = document.getElementById('cart-container');
+            const csrfToken = '{{ csrf_token }}';
+            const subject = "{{ subject }}";
+
+            homeworkTypeSelect.addEventListener('change', function() {
+                console.log('Тип задания изменён:', this.value);
+                hiddenHomeworkType.value = this.value;
+                uploadSection.style.display = this.value === 'upload' ? 'block' : 'none';
+                filterSection.style.display = (this.value === 'manual' || this.value === 'random') ? 'block' : 'none';
+                taskCountContainer.style.display = this.value === 'random' ? 'block' : 'none';
+                cartContainer.style.display = (this.value === 'manual' || this.value === 'random') ? 'block' : 'none';
+            });
+
+            document.getElementById('generate-answer-table').addEventListener('click', function() {
+                const taskCount = parseInt(document.querySelector('#upload-section input[name="task_count"]').value) || 1;
+                const tableBody = document.getElementById('answer-table-body');
+                tableBody.innerHTML = '';
+                for (let i = 1; i <= taskCount; i++) {
+                    tableBody.innerHTML += `
+                        <tr>
+                            <td>${i}</td>
+                            <td><input type="text" name="answers[${i}]" required></td>
+                        </tr>
+                    `;
+                }
+                document.getElementById('answer-table').style.display = 'table';
+            });
+
+            const selectAllCheckbox = document.getElementById('select-all');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    console.log('Выбрать все:', this.checked);
+                    const checkboxes = document.querySelectorAll('#filter-section input[type="checkbox"]:not(#select-all)');
+                    checkboxes.forEach(checkbox => checkbox.checked = this.checked);
+                });
+            }
+
+            document.querySelectorAll('.delete-homework').forEach(button => {
+                button.addEventListener('click', function() {
+                    const homeworkId = this.getAttribute('data-homework-id');
+                    if (confirm('Вы уверены, что хотите удалить это домашнее задание?')) {
+                        fetch("{% url 'users:create_homework' subject=subject %}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-CSRFToken': csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: `homework_id=${homeworkId}&delete_homework=true`
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                this.parentElement.parentElement.remove();
+                                if (!document.querySelector('.homework-list li')) {
+                                    document.querySelector('#assigned').innerHTML = '<h2>Ваши домашние задания</h2><p>Вы еще не задали домашние задания.</p>';
+                                }
+                            } else {
+                                alert(data.error || 'Ошибка при удалении');
+                            }
+                        })
+                        .catch(error => console.error('Ошибка:', error));
+                    }
+                });
+            });
+
+            document.querySelectorAll('.add-task-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const taskId = this.getAttribute('data-task-id');
+                    console.log('Добавление задания:', taskId);
+                    fetch("{% url 'users:create_homework' subject=subject %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: `task_id=${taskId}&add_task=true`
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            let cartList = document.getElementById('cart-list');
+                            const emptyMessage = document.getElementById('cart-empty-message');
+                            if (emptyMessage) emptyMessage.remove();
+                            if (!cartList.querySelector(`li[data-task-id="${taskId}"]`)) {
+                                const li = document.createElement('li');
+                                li.setAttribute('data-task-id', taskId);
+                                li.innerHTML = `
+                                    <a href="/${subject}/task/${taskId}/">Задача ${taskId}: ${data.task_text}</a>
+                                    <div>
+                                        ${hiddenHomeworkType.value === 'random' ? `<button type="button" class="btn btn-refresh refresh-task-btn" data-task-id="${taskId}">Обновить</button>` : ''}
+                                        <button type="button" class="btn btn-danger remove-task-btn" data-task-id="${taskId}">Удалить</button>
+                                    </div>
+                                `;
+                                cartList.appendChild(li);
+                                li.style.backgroundColor = '#e0ffe0';
+                                setTimeout(() => li.style.backgroundColor = '', 1000);
+                                attachRemoveListeners();
+                                attachRefreshListeners();
+                            } else {
+                                alert('Задание уже в корзине');
+                            }
+                        } else {
+                            alert(data.error || 'Ошибка при добавлении');
+                        }
+                    })
+                    .catch(error => console.error('Ошибка:', error));
+                });
+            });
+
+            function attachRemoveListeners() {
+                document.querySelectorAll('.remove-task-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const taskId = this.getAttribute('data-task-id');
+                        console.log('Удаление задания:', taskId);
+                        fetch("{% url 'users:create_homework' subject=subject %}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-CSRFToken': csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: `task_id=${taskId}&remove_task=true`
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                const li = document.querySelector(`li[data-task-id="${taskId}"]`);
+                                if (li) {
+                                    li.style.backgroundColor = '#ffe0e0';
+                                    setTimeout(() => {
+                                        li.remove();
+                                        if (!document.getElementById('cart-list').children.length) {
+                                            document.getElementById('cart-list').innerHTML = '<li id="cart-empty-message">Корзина пуста</li>';
+                                        }
+                                    }, 300);
+                                }
+                            } else {
+                                alert(data.error || 'Ошибка при удалении');
+                            }
+                        })
+                        .catch(error => console.error('Ошибка:', error));
+                    });
+                });
+            }
+            attachRemoveListeners();
+
+            function attachRefreshListeners() {
+                document.querySelectorAll('.refresh-task-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const taskId = this.getAttribute('data-task-id');
+                        console.log('Обновление задания:', taskId);
+                        fetch("{% url 'users:create_homework' subject=subject %}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-CSRFToken': csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: `task_id=${taskId}&refresh_task=true`
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                const li = document.querySelector(`li[data-task-id="${taskId}"]`);
+                                if (li) {
+                                    li.setAttribute('data-task-id', data.new_task_id);
+                                    li.querySelector('a').href = `/${subject}/task/${data.new_task_id}/`;
+                                    li.querySelector('a').textContent = `Задача ${data.new_task_id}: ${data.task_text}`;
+                                    li.querySelector('.refresh-task-btn').setAttribute('data-task-id', data.new_task_id);
+                                    li.querySelector('.remove-task-btn').setAttribute('data-task-id', data.new_task_id);
+                                    li.style.backgroundColor = '#e0f7fa';
+                                    setTimeout(() => li.style.backgroundColor = '', 1000);
+                                }
+                            } else {
+                                alert(data.error || 'Ошибка при обновлении');
+                            }
+                        })
+                        .catch(error => console.error('Ошибка:', error));
+                    });
+                });
+            }
+            attachRefreshListeners();
+
+            document.getElementById('clear-cart-btn').addEventListener('click', function() {
+                if (confirm('Вы уверены, что хотите очистить корзину заданий?')) {
+                    fetch("{% url 'users:create_homework' subject=subject %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: 'clear_cart=true'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const cartList = document.getElementById('cart-list');
+                            cartList.innerHTML = '<li id="cart-empty-message">Корзина пуста</li>';
+                        } else {
+                            alert(data.error || 'Ошибка при очистке корзины');
+                        }
+                    })
+                    .catch(error => console.error('Ошибка:', error));
+                }
+            });
+        });
+    </script>
+{% endblock %}

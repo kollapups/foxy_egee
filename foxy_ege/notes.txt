@@ -1,0 +1,63 @@
+pidaras_1_20.py можно редачить для разных range Tasks.task 
+///////////
+
+Для рендера:
+1) python export_tasks.py 
+2) node render_latex_to_svg.js
+3) python manage.py import_svg_tasks tasks_data_svg.json
+
+Для тестового рендера:
+1) python manage.py import_svg_tasks test_svg.json
+2) ndoe generate_test_html.js
+че-то там еще надо с mv test.json tasks_data.json я хуй знает, надо еще раз делать, забыл. потом вспомнишь
+////////////////
+
+export_tasks.py:
+Можно в коде точные ID для экспорта 
+
+1. Экспорт задач в диапазоне (например, 130-150)
+bash
+
+python export_tasks.py --range 130 150
+
+Экспортируются задачи с unique_id от 130 до 150 (включительно).
+
+Вывод:
+
+Экспортируются задачи с unique_id от 130 до 150
+Экспортировано X записей в tasks_data.json
+
+2. Экспорт конкретных задач (например, 151, 159, 164)
+bash
+
+python export_tasks.py --ids 151 159 164
+
+Экспортируются только задачи с unique_id 151, 159 и 164.
+
+Вывод:
+
+Экспортируются задачи с unique_id: ['151', '159', '164']
+Экспортировано X записей в tasks_data.json
+
+3. Экспорт всех задач
+bash
+
+python export_tasks.py
+
+Экспортируются все задачи.
+
+Вывод:
+
+Экспортируются все задачи
+Экспортировано X записей в tasks_data.json
+
+После экспорта
+После экспорта выполнять остальные шаги вашего процесса:
+bash
+
+node render_latex_to_svg.js
+python manage.py import_svg_tasks tasks_data_svg.json
+
+/////////////////////////
+путь статики на timeweb:
+~/foxyege.ru/public_html/static/css

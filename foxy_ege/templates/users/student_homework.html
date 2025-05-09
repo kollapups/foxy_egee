@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Выполнение домашних заданий - {{ subject|title }}
+{% endblock %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="{% static 'css/homework.css' %}">
+    <style>
+        .homework-form { margin: 20px 0; }
+        .dynamic-table { width: 100%; border-collapse: collapse; }
+        .dynamic-table th, .dynamic-table td { border: 1px solid #ddd; padding: 8px; }
+        .time-info { font-size: 0.9em; color: #666; }
+        .task-item { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; background: #fff; }
+        .homework-list { list-style: none; padding: 0; }
+        .homework-list li { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; background: #f9f9f9; }
+        .btn { display: inline-block; padding: 8px 16px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px; }
+        .btn:hover { background-color: #45a049; }
+        .tab { overflow: hidden; border-bottom: 1px solid #ccc; }
+        .tab button { background-color: inherit; float: left; border: none; outline: none; cursor: pointer; padding: 14px 16px; transition: 0.3s; }
+        .tab button:hover { background-color: #ddd; }
+        .tab button.active { background-color: #ccc; }
+        .tabcontent { display: none; padding: 6px 12px; }
+        .tabcontent.active { display: block; }
+        @media (min-width: 769px) {
+            .main-content {
+                margin-left: 160px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <h1>Ваши домашние задания</h1>
+
+    {% if received_homeworks %}
+        <div class="tab">
+            <button class="tablinks active" onclick="openTab(event, 'pending')">Актуальные ДЗ</button>
+            <button class="tablinks" onclick="openTab(event, 'completed')">Выполненные ДЗ</button>
+        </div>
+
+        <div id="pending" class="tabcontent active">
+            <ul class="homework-list">
+                {% for student_homework in received_homeworks %}
+                    {% if student_homework.status == "pending" %}
+                        <li data-homework-id="{{ student_homework.id }}">
+                            <strong>{{ student_homework.homework.title }}</strong> (от {{ student_homework.homework.teacher.display_name|default:student_homework.homework.teacher.username }})
+                            <p>Срок: {{ student_homework.homework.due_date|default:"Не указан" }}</p>
+                            <p>Статус: {{ student_homework.get_status_display }}</p>
+                            <button type="button" class="start-homework btn" data-homework-id="{{ student_homework.id }}">Выполнить ДЗ</button>
+                            <div class="homework-form" style="display: none;"></div>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div id="completed" class="tabcontent">
+            <ul class="homework-list">
+                {% for student_homework in received_homeworks %}
+                    {% if student_homework.status == "completed" %}
+                        <li data-homework-id="{{ student_homework.id }}">
+                            <strong>{{ student_homework.homework.title }}</strong> (от {{ student_homework.homework.teacher.display_name|default:student_homework.homework.teacher.username }})
+                            <p>Срок: {{ student_homework.homework.due_date|default:"Не указан" }}</p>
+                            <p>Статус: {{ student_homework.get_status_display }}</p>
+                            <button type="button" class="start-homework btn" data-homework-id="{{ student_homework.id }}">Просмотреть</button>
+                            <div class="homework-form" style="display: none;"></div>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+    {% else %}
+        <p>У вас нет назначенных домашних заданий.</p>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        function openTab(evt, tabName) {
+            const tabcontent = document.getElementsByClassName("tabcontent");
+            for (let i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].classList.remove("active");
+            }
+            const tablinks = document.getElementsByClassName("tablinks");
+            for (let i = 0; i < tablinks.length; i++) {
+                tablinks[i].classList.remove("active");
+            }
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const csrfToken = '{{ csrf_token }}';
+
+            document.querySelectorAll('.start-homework').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const homeworkId = this.dataset.homeworkId;
+                    const url = `{% url 'users:get_homework' subject=subject %}?homework_id=${homeworkId}`;
+                    const li = this.closest('li');
+                    const formDiv = li.querySelector('.homework-form');
+
+                    fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': csrfToken,
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'same-origin'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            formDiv.innerHTML = `
+                                <h3>${data.title}</h3>
+                                <p class="time-info">Начало: ${new Date().toLocaleString()}</p>
+                                <form method="post" action="{% url 'users:submit_homework' subject=subject %}" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="homework_id" value="${homeworkId}">
+                                    <div class="homework-tasks">
+                                        <p><strong>Срок сдачи:</strong> ${data.due_date ? new Date(data.due_date).toLocaleString() : 'Не указан'}</p>
+                                        ${data.description ? `<p><strong>Описание:</strong> ${data.description}</p>` : ''}
+                                        ${data.homework_type === 'upload' && data.file_urls ? data.file_urls.map(file => {
+                                            const isImage = file.url.endsWith('.jpg') || file.url.endsWith('.png');
+                                            return `
+                                                <div class="task-item">
+                                                    ${isImage ? `<img src="${file.url}" style="max-width: ${data.image_size}px; height: auto;">` : ''}
+                                                    <p><a href="${file.url}" target="_blank" download="${file.name}">Скачать задание (${file.name.split('.').pop()})</a></p>
+                                                </div>
+                                            `;
+                                        }).join('') : ''}
+                                        ${data.status !== 'completed' ? `
+                                            ${data.answers && Object.keys(data.answers).length > 0 ? `
+                                                <table class="dynamic-table">
+                                                    <thead><tr><th>№ задания</th><th>Ваш ответ</th></tr></thead>
+                                                    <tbody>
+                                                        ${Object.keys(data.answers).map(i => `
+                                                            <tr><td>${i}</td><td><input type="text" name="student_answers[${i}]" class="student-answer"></td></tr>
+                                                        `).join('')}
+                                                    </tbody>
+                                                </table>
+                                            ` : ''}
+                                            <p>Загрузите фото решений (до 10 файлов, каждый до 2 МБ, необязательно):</p>
+                                            <p style="color: #ff5555;">Внимание: файлы будут удалены через 30 дней после загрузки.</p>
+                                            <input type="file" name="submission_files" accept="image/*" multiple>
+                                        ` : ''}
+                                        ${data.homework_type === 'manual' || data.homework_type === 'random' ? data.tasks.map(task => `
+                                            <div class="task-item">
+                                                <p>Задача ${task.unique_id}: ${task.text}</p>
+                                                ${task.image ? `<img src="${task.image}" style="max-width: ${data.image_size}px; height: auto;">` : ''}
+                                                ${task.can_answer && data.status !== 'completed' ? `
+                                                    <label>Ваш ответ:</label>
+                                                    <input type="text" name="student_answers[${task.id}]" class="student-answer">
+                                                ` : ''}
+                                            </div>
+                                        `).join('') : ''}
+                                        ${data.status === 'completed' && data.submission_files && data.submission_files.length > 0 ? `
+                                            <h4>Загруженные файлы:</h4>
+                                            ${data.submission_files.map(file => `
+                                                <p><a href="${file.url}" target="_blank" download="${file.name}">Скачать (${file.name})</a></p>
+                                            `).join('')}
+                                        ` : ''}
+                                    </div>
+                                    ${data.status !== 'completed' ? '<button type="submit" class="btn">Сдать ДЗ</button>' : ''}
+                                </form>
+                                <div class="homework-results" style="display: ${data.status === 'completed' ? 'block' : 'none'};">
+                                    ${data.status === 'completed' ? `
+                                        <h3>Результаты</h3>
+                                        ${data.results && Object.keys(data.results).length > 0 ? `
+                                            <p>${data.correct_count}/${data.total_count} (${data.percentage}%)</p>
+                                            <table class="dynamic-table">
+                                                <thead><tr><th>№ задания</th><th>Ваш ответ</th><th>Правильный ответ</th><th>Статус</th></tr></thead>
+                                                <tbody>
+                                                    ${Object.entries(data.results).map(([taskNum, result]) => `
+                                                        <tr style="background-color: ${result.is_correct ? '#e0ffe0' : '#ffe0e0'}">
+                                                            <td>${taskNum}</td>
+                                                            <td>${result.student_answer || 'Не указано'}</td>
+                                                            <td>${result.correct_answer}</td>
+                                                            <td>${result.is_correct ? 'Верно' : 'Неверно'}</td>
+                                                        </tr>
+                                                    `).join('')}
+                                                </tbody>
+                                            </table>
+                                        ` : '<p>ДЗ сдано, результаты проверяются учителем</p>'}
+                                    ` : ''}
+                                </div>
+                            `;
+                            formDiv.style.display = 'block';
+
+                            if (window.MathJax) {
+                                MathJax.typesetPromise([formDiv]).catch(err => console.error('Ошибка MathJax:', err));
+                            }
+
+                            formDiv.querySelector('form').addEventListener('submit', function(e) {
+                                e.preventDefault();
+                                const formData = new FormData(this);
+                                fetch(this.action, {
+                                    method: 'POST',
+                                    body: formData,
+                                    headers: { 'X-CSRFToken': csrfToken },
+                                    credentials: 'same-origin'
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        const resultsDiv = formDiv.querySelector('.homework-results');
+                                        resultsDiv.innerHTML = `
+                                            <h3>Результаты</h3>
+                                            ${data.results && Object.keys(data.results).length > 0 ? `
+                                                <p>${data.correct_count}/${data.total_count} (${data.percentage}%)</p>
+                                                <table class="dynamic-table">
+                                                    <thead><tr><th>№ задания</th><th>Ваш ответ</th><th>Правильный ответ</th><th>Статус</th></tr></thead>
+                                                    <tbody>
+                                                        ${Object.entries(data.results).map(([taskNum, result]) => `
+                                                            <tr style="background-color: ${result.is_correct ? '#e0ffe0' : '#ffe0e0'}">
+                                                                <td>${taskNum}</td>
+                                                                <td>${result.student_answer || 'Не указано'}</td>
+                                                                <td>${result.correct_answer}</td>
+                                                                <td>${result.is_correct ? 'Верно' : 'Неверно'}</td>
+                                                            </tr>
+                                                        `).join('')}
+                                                    </tbody>
+                                                </table>
+                                            ` : '<p>ДЗ сдано, результаты проверяются учителем</p>'}
+                                        `;
+                                        resultsDiv.style.display = 'block';
+                                        this.querySelector('button[type="submit"]').disabled = true;
+                                        this.querySelectorAll('.student-answer').forEach(input => input.disabled = true);
+                                        li.querySelector('.start-homework').disabled = true;
+                                        li.querySelector('.start-homework').textContent = 'Просмотреть';
+                                        if (window.MathJax) {
+                                            MathJax.typesetPromise([resultsDiv]).catch(err => console.error('Ошибка MathJax:', err));
+                                        }
+                                    } else {
+                                        alert(data.error || 'Ошибка при сдаче ДЗ');
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Ошибка:', error);
+                                    alert('Ошибка при сдаче ДЗ');
+                                });
+                            });
+                        } else {
+                            alert(data.error || 'Ошибка загрузки задания');
+                        }
+                    })
+                    .catch(error => console.error('Ошибка:', error));
+                });
+            });
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,563 @@
+/* Стили для generate_variant.html */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    color: #4d4d4d;
+}
+
+.main-content h1 {
+    font-size: 28px;
+    color: #ff6f61;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.main-content h2 {
+    font-size: 22px;
+    color: #ff6f61;
+    margin: 20px 0 10px;
+    text-align: left;
+}
+
+.main-content p {
+    font-size: 16px;
+    color: #555;
+    text-align: justify;
+    line-height: 1.8;
+    margin-bottom: 15px;
+}
+
+.no-numbering {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.no-numbering li {
+    margin-bottom: 20px;
+}
+
+button {
+    background-color: #ff6f61;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: block;
+    margin: 15px auto;
+}
+
+button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+#generator-settings {
+    margin: 20px 0;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+    position: relative;
+    z-index: 1000;
+    box-sizing: border-box; /* Учитываем padding в ширине */
+    max-width: 100%; /* Ограничение контейнера */
+}
+
+.filter-item {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 15px;
+}
+
+.variant-toggle-button {
+    display: inline-block;
+    padding: 8px 12px;
+    background-color: #ff6f61;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+    margin-right: 10px;
+    white-space: nowrap;
+}
+
+.variant-toggle-button:hover {
+    background-color: #ff9a8b;
+}
+
+.variant-toggle-button::after {
+    content: " ▼";
+    transition: transform 0.3s ease;
+    margin-left: 8px;
+}
+
+.variant-toggle-button[aria-expanded="true"]::after {
+    transform:rotate(180deg);
+}
+
+.filter-section {
+    position: absolute; /* Абсолютное позиционирование для выпадающего списка */
+    top: 100%; /* Расположение под кнопкой */
+    left: 0;
+    z-index: 1000; /* Поверх остального контента */
+    background-color: #fff; /* Белый фон вместо серого для единообразия */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    display: none; /* Скрыто по умолчанию */
+    min-width: 200px; /* Минимальная ширина для читаемости */
+    max-height: 200px; /* Ограничение высоты с прокруткой */
+    overflow-y: auto; /* Прокрутка при переполнении */
+}
+
+.filter-section ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.filter-section li {
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.filter-section input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.filter-section label {
+    font-size: 14px;
+    color: #4d4d4d;
+    cursor: pointer;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.filter-button {
+    display: block;
+    margin: 20px auto;
+    padding: 10px 20px;
+    background-color: #ff6f61;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+.filter-button:hover {
+    background-color: #ff9a8b;
+}
+
+.reset-button {
+    background-color: #fff;
+    color: #ff6f61;
+    border: 1px solid #ff6f61;
+}
+
+.reset-button:hover {
+    background-color: #fdedea;
+}
+
+.selected-filters {
+    margin-top: 20px;
+    padding: 15px;
+    background: #fff;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.selected-filters h3 {
+    font-size: 16px;
+    color: #ff6f61;
+    margin-bottom: 5px;
+}
+
+.selected-filters ul {
+    list-style: none;
+    padding: 0;
+}
+
+.selected-filters li {
+    font-size: 14px;
+    color: #4d4d4d;
+    margin-bottom: 5px;
+}
+
+a {
+    color: #ff6f61;
+    text-decoration: none;
+    font-weight: bold;
+}е
+
+a:hover {
+    color: #ff9a8b;
+    text-decoration: underline;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+th, td {
+    padding: 10px;
+    border: 1px solid #ccc;
+    text-align: left;
+}
+
+th {
+    background-color: #ff6f61;
+    color: white;
+}
+
+.task-image-container {
+    text-align: center;
+    margin: 15px 0;
+}
+
+.task-image {
+    display: block;
+    margin: 0 auto;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.user-answer {
+    padding: 5px;
+    border: 2px solid #ff6f61;
+    border-radius: 5px;
+    margin-top: 5px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.favorite-button {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #ccc;
+    cursor: pointer;
+    padding: 5px;
+    margin: 15px auto;
+    transition: color 0.3s ease;
+}
+
+.favorite-button:hover {
+    color: #ff6f61;
+}
+
+.favorite-button.favorite-active {
+    color: #ff6f61;
+}
+
+.second-part-note {
+    color: #777;
+    font-style: italic;
+}
+
+.variant-link-container {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.link-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    max-width: 600px;
+    width: 100%;
+    margin: 10px auto;
+}
+
+.variant-link {
+    flex: 1;
+    padding: 10px 40px 10px 15px;
+    border: 1px solid #ff6f61;
+    border-radius: 25px;
+    font-size: 14px;
+    color: #555;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.copy-btn {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    color: #ff6f61;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.3s ease;
+}
+
+.copy-btn:hover {
+    color: #ff9a8b;
+}
+
+.share-container {
+    position: relative;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+.share-btn {
+    background-color: #ff6f61;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.share-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.share-options {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    z-index: 1000;
+    width: 150px;
+    display: none;
+}
+
+.share-option {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    color: #ff6f61;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+.share-option i {
+    margin-right: 8px;
+}
+
+.share-option:hover {
+    background-color: #ffe6ea;
+}
+
+.variant-saved-message {
+    margin-top: 20px;
+}
+
+.variant-saved-message p {
+    color: green;
+}
+
+.error-message {
+    color: red;
+}
+
+.print-link {
+    margin-top: 20px;
+    text-align: right;
+}
+
+.print-btn {
+    display: inline-flex;
+    align-items: center;
+    font-size: 16px;
+}
+
+.print-btn img {
+    width: 70px;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+.task-image.exam-line-1 {
+    max-width: 100px;
+    height: auto;
+}
+.task-image.exam-line-2 {
+    max-width: 400px;
+    height: auto;
+}
+.task-image.exam-line-3 {
+    max-width: 100px;
+    height: auto;
+}
+.task-image.exam-line-8 {
+    max-width: 700px;
+    height: auto;
+}
+.task-image.exam-line-11 {
+    max-width: 300px;
+    height: auto;
+}
+.task-image:not([class*="exam-line-"]) {
+    max-width: 100%;
+    height: auto;
+}
+
+@media (max-width: 1024px) {
+    .main-content h1 {
+        font-size: 26px;
+    }
+    .main-content h2 {
+        font-size: 20px;
+    }
+    .main-content p {
+        font-size: 15px;
+    }
+    .filter-actions {
+        flex-direction: column;
+        gap: 15px;
+    }
+    .link-wrapper {
+        flex-direction: row;
+        align-items: center;
+    }
+    .variant-link {
+        width: 100%;
+    }
+    .copy-btn {
+        font-size: 14px;
+        padding: 5px;
+    }
+    button {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+    .print-btn img {
+        width: 50px;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-content h1 {
+        font-size: 24px;
+        text-align: center;
+    }
+    .main-content h2 {
+        font-size: 20px;
+        text-align: center;
+    }
+    .main-content p {
+        font-size: 14px;
+    }
+    .filter-section {
+        max-width: 100%;
+    }
+    .variant-toggle-button {
+        font-size: 16px;
+        padding: 8px 12px;
+    }
+    .filter-section {
+        padding: 8px;
+    }
+    .share-options {
+        text-align: center;
+    }
+    .share-option {
+        display: block;
+        margin: 5px 0;
+    }
+    .copy-btn {
+        font-size: 14px;
+        padding: 5px;
+    }
+    button {
+        padding: 8px 14px;
+        font-size: 14px;
+    }
+    .favorite-button {
+        font-size: 20px;
+    }
+    .print-btn {
+        font-size: 14px;
+    }
+    .print-btn img {
+        width: 50px;
+    }
+    th, td {
+        padding: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-content h1 {
+        font-size: 20px;
+    }
+    .main-content h2 {
+        font-size: 18px;
+    }
+    .main-content p {
+        font-size: 13px;
+    }
+    .variant-toggle-button {
+        font-size: 14px;
+        padding: 6px 10px;
+    }
+    .filter-section {
+        font-size: 14px;
+    }
+    .filter-button, #submit-variant {
+        font-size: 14px;
+        padding: 8px 12px;
+    }
+    .share-btn {
+        font-size: 14px;
+        padding: 8px 12px;
+    }
+    .copy-btn {
+        font-size: 12px;
+        padding: 4px;
+        right: 8px;
+    }
+    .variant-link {
+        font-size: 12px;
+        padding: 8px 35px 8px 12px;
+    }
+    button {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+    .favorite-button {
+        font-size: 18px;
+    }
+    .print-btn {
+        font-size: 12px;
+    }
+    .print-btn img {
+        width: 40px;
+    }
+    th, td {
+        padding: 6px;
+        font-size: 12px;
+    }
+}

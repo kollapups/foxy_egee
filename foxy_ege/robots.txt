@@ -1,0 +1,11 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /users/login/
+Disallow: /users/register/
+Disallow: /users/logout/
+Disallow: /users/profile/
+Disallow: /cookie_consent/
+Disallow: /accept-cookies/
+Disallow: /decline-cookies/
+Disallow: /delete-cookies/
+Sitemap: https://foxyge.ru/sitemap.xml

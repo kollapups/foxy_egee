@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Настройки печати варианта
+{% endblock %}
+
+{% block content %}
+    <h1>Настройки печати варианта</h1>
+    <style>
+        form button[name="format"] {
+            padding: 10px 20px;
+            margin-right: 10px;
+            background-color: #ff6f61;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        form button[name="format"]:hover {
+            background-color: #e65b50;
+        }
+    </style>
+    <form method="GET" action="{% url 'tasks:pdf_variant' subject=subject uuid=uuid variant_id=variant_id %}" target="_blank">
+        {% for key, value in origin_params.items %}
+            {% if key != "format" %}
+                <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endif %}
+        {% endfor %}
+
+        <div style="margin-bottom: 15px;">
+            <h3>Выберите ориентацию:</h3>
+            <button type="submit" name="format" value="portrait">Вертикальная ориентация</button>
+            <button type="submit" name="format" value="landscape">Горизонтальная ориентация</button>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label for="with_answers">
+                <input type="checkbox" name="with_answers" id="with_answers" value="1">
+                С ответами
+            </label>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label for="with_solutions">
+                <input type="checkbox" name="with_solutions" id="with_solutions" value="1">
+                С решениями
+            </label>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label for="with_variant_link">
+                <input type="checkbox" name="with_variant_link" id="with_variant_link" value="1">
+                Добавить ссылку на вариант в PDF
+            </label>
+        </div>
+    </form>
+{% endblock %}

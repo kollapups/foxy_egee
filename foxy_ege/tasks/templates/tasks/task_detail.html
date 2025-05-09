@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% load static task_tags %}
+
+{% block title %}
+    Задание №{{ task.unique_id }}, Линия {{ task.exam_line|default:"Не указано" }} - FoxyEGE.ru
+{% endblock %}
+
+{% block og_title %}
+    Задание №{{ task.unique_id }}, Линия {{ task.exam_line|default:"Не указано" }} - FoxyEGE.ru
+{% endblock %}
+{% block og_description %}
+    Решайте задание №{{ task.unique_id }} из линии {{ task.exam_line|default:"Не указано" }} для подготовки к ЕГЭ по {{ subject|title }} на FoxyEGE.ru
+{% endblock %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="{% static 'css/task_detail.css' %}">
+    <style>
+        .task-detail {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .task-text, .solution-text, .latex-formula {
+            margin-bottom: 20px;
+        }
+        .task-image-container {
+            margin: 15px 0;
+            text-align: center;
+        }
+        .task-image {
+            max-width: 100%;
+            height: auto;
+        }
+        .exam-line-1, .exam-line-2, .exam-line-3, .exam-line-8, .exam-line-11 {
+            max-width: 100px !important;
+        }
+        .submit-button {
+            background-color: #28a745;
+            color: white;
+        }
+        .comment-list {
+            list-style: none;
+            padding: 0;
+        }
+        .comment-item {
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+        }
+        .solution-step {
+            margin-bottom: 15px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="task-detail">
+        <h1>{{ task.exam_line|default:"Не указано" }}, №{{ task.unique_id }} (В банке заданий)</h1>        
+        <h2>Текст задания:</h2>
+        <div class="task-text">
+            {{ task.text_svg|safe|default:task.text|default:"Текст задачи отсутствует" }}
+        </div>
+        {% if task.latex_formula_svg %}
+            <div class="latex-formula">
+                {{ task.latex_formula_svg|safe }}
+            </div>
+        {% endif %}
+        {% if task.image %}
+            <div class="task-image-container">
+                <img 
+                    src="{{ task.image.url }}" 
+                    alt="Изображение к заданию" 
+                    class="task-image exam-line-{{ task.exam_line.number|default:'0' }}"
+                >
+            </div>
+        {% endif %}
+
+        <div class="task-actions">
+            {% if task.has_solution %}
+                <button class="solution-button" data-task-id="{{ task.unique_id }}">Решение</button>
+                <button class="favorite-button {% if task.unique_id in favorite_task_ids %}favorite-active{% endif %}" data-task-id="{{ task.unique_id }}">{% if task.unique_id in favorite_task_ids %}★{% else %}☆{% endif %}</button>
+            {% else %}
+                <p>Решение в разработке.</p>
+            {% endif %}
+        </div>
+
+        {% if task.has_solution %}
+            <div id="solution-{{ task.unique_id }}" class="solution-content">
+                <h3>Решение:</h3>
+                {% if task.solution_text_svg %}
+                    <div class="solution-text">
+                        {% for step in task.solution_text_svg|split_steps %}
+                            <div class="solution-step">
+                                {{ step|safe }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p>Решение отсутствует</p>
+                {% endif %}
+                {% for solution_image in task.solution_images.all %}
+                    <div class="solution-image">
+                        <img src="{{ solution_image.image.url }}" style="width: {{ solution_image.width }}px;" alt="Solution image">
+                    </div>
+                {% endfor %}
+                {% if task.answer %}
+                    <p><strong>Ответ:</strong> {{ task.answer }}</p>
+                {% endif %}
+                <p><em>Непонятное решение? Можете написать в комментариях, что именно непонятно.</em></p>
+            </div>
+        {% endif %}
+
+        <h2>Оставить комментарий</h2>
+        <form method="POST" action="{% url 'tasks:task_detail' subject=subject unique_id=task.unique_id %}">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="submit-button">Отправить комментарий</button>
+        </form>
+
+        <h2>Комментарии</h2>
+        {% if approved_comments %}
+            <ul class="comment-list">
+                {% for comment in approved_comments %}
+                    <li class="comment-item">
+                        <strong>{{ comment.author_name }}:</strong>
+                        <p>{{ comment.text }}</p>
+                        <small>Опубликовано: {{ comment.created_at|date:"d.m.Y H:i" }}</small>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Комментариев пока нет.</p>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            const csrfToken = getCookie('csrftoken');
+
+            // Обработчик для кнопки "Решение"
+            const solutionButton = document.querySelector('.solution-button');
+            if (solutionButton) {
+                solutionButton.addEventListener('click', function() {
+                    const taskId = this.getAttribute('data-task-id');
+                    const solutionContent = document.getElementById(`solution-${taskId}`);
+                    if (solutionContent) {
+                        if (solutionContent.style.display === 'none' || !solutionContent.style.display) {
+                            solutionContent.style.display = 'block';
+                            this.textContent = 'Скрыть решение';
+                        } else {
+                            solutionContent.style.display = 'none';
+                            this.textContent = 'Решение';
+                        }
+                    }
+                });
+            }
+
+            // Обработчик для кнопки "В избранное"
+            const favoriteButton = document.querySelector('.favorite-button');
+            if (favoriteButton) {
+                favoriteButton.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    const isAuthenticated = {{ user.is_authenticated|lower }};
+                    if (!isAuthenticated) {
+                        const authButton = document.getElementById('authButton');
+                        if (authButton) authButton.click();
+                        return;
+                    }
+                    const taskId = this.getAttribute('data-task-id');
+                    const formData = new URLSearchParams();
+                    formData.append('task_id', taskId);
+                    try {
+                        const response = await fetch("{% url 'tasks:toggle_favorite' subject=subject %}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-CSRFToken': csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: formData.toString(),
+                            credentials: 'same-origin'
+                        });
+                        if (response.redirected) {
+                            window.location.href = response.url;
+                            return;
+                        }
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                        const data = await response.json();
+                        if (data.success) {
+                            this.classList.toggle('favorite-active', data.is_favorite);
+                            this.textContent = data.is_favorite ? '★' : '☆';
+                            if (data.message) {
+                                const messageDiv = document.createElement('div');
+                                messageDiv.textContent = data.message;
+                                messageDiv.style.position = 'fixed';
+                                messageDiv.style.top = '20px';
+                                messageDiv.style.right = '20px';
+                                messageDiv.style.padding = '10px';
+                                messageDiv.style.backgroundColor = '#4CAF50';
+                                messageDiv.style.color = 'white';
+                                messageDiv.style.borderRadius = '5px';
+                                messageDiv.style.zIndex = '1000';
+                                document.body.appendChild(messageDiv);
+                                setTimeout(() => messageDiv.remove(), 3000);
+                            }
+                        } else {
+                            console.error('Error:', data.error);
+                            alert(data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Произошла ошибка при обновлении избранного');
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}

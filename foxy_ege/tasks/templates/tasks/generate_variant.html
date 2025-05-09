@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+{% load static custom_filters task_tags %}
+
+{% block title %}
+    Генератор вариантов - {{ subject|title }}
+{% endblock %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="{% static 'css/generate_variant.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+    <h1>Генератор вариантов</h1>
+
+    {% if variant %}
+        <div class="print-link">
+            <a href="{% url 'tasks:print_variants_settings' subject=subject uuid=uuid %}?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}variant_id={{ variant_id }}&with_answers=0&with_solutions=0" class="print-btn" target="_blank">
+                <img src="{% static 'images/print_icon.png' %}" alt="Print"> Версия для печати
+            </a>
+        </div>
+    {% endif %}
+
+    <p>
+        Хотите сгенерировать свой вариант для лучшей подготовки?
+        <button id="toggle-generator-settings">Настроить генератор</button>
+    </p>
+
+    <div id="generator-settings" style="display: none;">
+        <h2>Настройте свой вариант</h2>
+        <form method="GET" action="{% url 'tasks:generate_variant' subject=subject %}" id="variant-form">
+            <div class="filter-item">
+                <label>
+                    <input type="checkbox" id="select-all" name="select_all" checked> Выбрать все
+                </label>
+            </div>
+
+            <div class="filter-item">
+                <button type="button" class="variant-toggle-button" data-target="variant-parts" aria-expanded="false">Части экзамена</button>
+                <div id="variant-parts" class="filter-section">
+                    {{ form.parts }}
+                </div>
+            </div>
+
+            <div class="filter-item">
+                <button type="button" class="variant-toggle-button" data-target="variant-exam_lines" aria-expanded="false">Задания экзамена</button>
+                <div id="variant-exam_lines" class="filter-section">
+                    {{ form.exam_lines }}
+                </div>
+            </div>
+
+            <div class="filter-item">
+                <button type="button" class="variant-toggle-button" data-target="variant-topics" aria-expanded="false">Темы</button>
+                <div id="variant-topics" class="filter-section">
+                    {{ form.topics }}
+                </div>
+            </div>
+
+            <div class="filter-item">
+                <button type="button" class="variant-toggle-button" data-target="variant-subtopics" aria-expanded="false">Подтемы</button>
+                <div id="variant-subtopics" class="filter-section">
+                    {{ form.subtopics }}
+                </div>
+            </div>
+
+            <div class="filter-item">
+                <button type="button" class="variant-toggle-button" data-target="variant-sources" aria-expanded="false">Источники</button>
+                <div id="variant-sources" class="filter-section">
+                    {{ form.sources }}
+                </div>
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" id="create-new-variant" class="filter-button">Создать новый вариант</button>
+                <a href="{% url 'tasks:generate_variant' subject=subject %}" class="filter-button reset-button">Сбросить фильтры</a>
+            </div>
+
+            {% if form.is_bound and form.is_valid %}
+                <div class="selected-filters">
+                    <h3>Выбранные фильтры:</h3>
+                    <ul>
+                        {% if form.cleaned_data.select_all %}
+                            <li>Выбрать все: Да</li>
+                        {% endif %}
+                        {% if form.cleaned_data.parts %}
+                            <li>Части экзамена: {{ form.cleaned_data.parts|join:", " }}</li>
+                        {% endif %}
+                        {% if form.cleaned_data.exam_lines %}
+                            <li>Задания экзамена: {{ form.cleaned_data.exam_lines|join:", " }}</li>
+                        {% endif %}
+                        {% if form.cleaned_data.topics %}
+                            <li>Темы: {{ form.cleaned_data.topics|join:", " }}</li>
+                        {% endif %}
+                        {% if form.cleaned_data.subtopics %}
+                            <li>Подтемы: {{ form.cleaned_data.subtopics|join:", " }}</li>
+                        {% endif %}
+                        {% if form.cleaned_data.sources %}
+                            <li>Источники: {{ form.cleaned_data.sources|join:", " }}</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% endif %}
+        </form>
+    </div>
+
+    {% if variant %}
+        <div class="variant-link-container">
+            <p>Ссылка на этот вариант:</p>
+            <div class="link-wrapper">
+                <input type="text" value="{{ request.scheme }}://{{ request.get_host }}{% url 'tasks:generate_variant_with_id' subject=subject variant_id=variant_id %}" readonly class="variant-link">
+                <button class="copy-btn" title="Скопировать ссылку"><i class="fas fa-copy"></i></button>
+            </div>
+            <div class="variant-saved-message">
+                <p>Вариант сохранен автоматически! Используйте ссылку выше, чтобы поделиться им.</p>
+            </div>
+            <div class="share-container">
+                <button class="share-btn">Поделиться</button>
+                <div class="share-options">
+                    <a href="https://t.me/share/url?url={{ request.scheme }}://{{ request.get_host }}{% url 'tasks:generate_variant_with_id' subject=subject variant_id=variant_id|urlencode %}" target="_blank" class="share-option telegram"><i class="fab fa-telegram-plane"></i> Telegram</a>
+                    <a href="https://vk.com/share.php?url={{ request.scheme }}://{{ request.get_host }}{% url 'tasks:generate_variant_with_id' subject=subject variant_id=variant_id|urlencode %}" target="_blank" class="share-option vk"><i class="fab fa-vk"></i> VK</a>
+                    <a href="https://api.whatsapp.com/send?text={{ request.scheme }}://{{ request.get_host }}{% url 'tasks:generate_variant_with_id' subject=subject variant_id=variant_id|urlencode %}" target="_blank" class="share-option whatsapp"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if error_message %}
+        <p class="error-message">{{ error_message }}</p>
+    {% endif %}
+
+    {% if variant %}
+        <h2>Сгенерированный вариант</h2>
+        <ol>
+            {% for task in variant %}
+                <li>
+                    <div style="display: none;">
+                        <div class="hidden-text">{{ task.text }}</div>
+                        {% if task.latex_formula %}
+                            <div class="hidden-latex">{{ task.latex_formula }}</div>
+                        {% endif %}
+                    </div>
+                    <a href="{% url 'tasks:task_detail' subject=subject unique_id=task.unique_id %}">
+                        Задание {{ task.exam_line.number }}
+                        <button class="favorite-button {% if task.unique_id in favorite_task_ids %}favorite-active{% endif %}" data-task-id="{{ task.unique_id }}">{% if task.unique_id in favorite_task_ids %}★{% else %}☆{% endif %}</button>
+                    </a>
+                    <p>{{ task.text_svg|safe|default:task.text|safe }}</p>
+                    {% if task.image %}
+                        <div class="task-image-container">
+                            <img 
+                                src="{{ task.image.url }}" 
+                                alt="Изображение к заданию" 
+                                class="task-image exam-line-{{ task.exam_line.number }}"
+                            >
+                        </div>
+                    {% endif %}
+
+                    {% if task.exam_part.name == "Первая часть" %}
+                        <label for="answer-{{ task.unique_id }}">Ваш ответ:</label>
+                        <input type="text" 
+                               id="answer-{{ task.unique_id }}" 
+                               class="user-answer" 
+                               data-correct="{{ task.answer }}" 
+                               data-line-number="{{ task.exam_line.number }}" 
+                               data-unique-id="{{ task.unique_id }}">
+                    {% elif task.exam_part.name == "Вторая часть" %}
+                        <p class="second-part-note"><em>Задачи из второй части проверяются самостоятельно после того, как вы нажмете на "Сдать работу".</em></p>
+                    {% endif %}
+                    <button class="favorite-button {% if task.unique_id in favorite_task_ids %}favorite-active{% endif %}" data-task-id="{{ task.unique_id }}">{% if task.unique_id in favorite_task_ids %}★{% else %}☆{% endif %}</button>
+                </li>
+            {% endfor %}
+        </ol>
+
+        <button id="submit-variant">Сдать работу</button>
+
+        <div id="answers-table" style="display: none;">
+            <h2>Результаты</h2>
+            <table border="1">
+                <thead>
+                    <tr>
+                        <th>Задание</th>
+                        <th>Ваш ответ</th>
+                        <th>Правильный ответ</th>
+                    </tr>
+                </thead>
+                <tbody id="results-body"></tbody>
+            </table>
+
+            <div id="second-part-solutions" style="display: none;">
+                <h2>Решения второй части</h2>
+                <ul class="no-numbering">
+                    {% for task in variant %}
+                        {% if task.exam_part.name == "Вторая часть" and task.has_solution %}
+                            <li>
+                                <strong>Задание {{ task.exam_line.number }}:</strong>
+                                {% if task.solution_text_svg %}
+                                    <div class="solution-text">
+                                        {% for step in task.solution_text_svg|split_steps %}
+                                            <div class="solution-step">
+                                                {{ step|safe }}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                {% if task.answer %}
+                                    <p><strong>Ответ:</strong> {{ task.answer }}</p>
+                                {% endif %}
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    {% else %}
+        <p>Недостаточно заданий для генерации варианта.</p>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script>
+        (function() {
+            'use strict';
+
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('Generate Variant DOM loaded');
+
+                // Обработчики для кнопок фильтров
+                const toggleButtons = document.querySelectorAll('.variant-toggle-button');
+                toggleButtons.forEach(button => {
+                    button.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        const targetId = this.getAttribute('data-target');
+                        const section = document.getElementById(targetId);
+
+                        if (!section) {
+                            console.error(`Секция с ID ${targetId} не найдена`);
+                            return;
+                        }
+
+                        console.log(`Клик по кнопке для ${targetId}`);
+                        const isVisible = section.style.display === 'block';
+                        document.querySelectorAll('.filter-section').forEach(sec => {
+                            sec.style.display = 'none';
+                            sec.previousElementSibling.setAttribute('aria-expanded', 'false');
+                        });
+                        section.style.display = isVisible ? 'none' : 'block';
+                        this.setAttribute('aria-expanded', isVisible ? 'false' : 'true');
+                    });
+                });
+
+                // Закрытие секций при клике вне
+                document.addEventListener('click', function(event) {
+                    const isClickInside = event.target.closest('.filter-item') || event.target.closest('.filter-section');
+                    if (!isClickInside) {
+                        console.log('Клик вне фильтров - закрываем все секции');
+                        document.querySelectorAll('.filter-section').forEach(section => {
+                            section.style.display = 'none';
+                            section.previousElementSibling.setAttribute('aria-expanded', 'false');
+                        });
+                    }
+                });
+
+                // Показать/скрыть настройки генератора
+                document.getElementById('toggle-generator-settings').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const settingsDiv = document.getElementById('generator-settings');
+                    settingsDiv.style.display = settingsDiv.style.display === 'none' ? 'block' : 'none';
+                });
+
+                // Обработчик "Выбрать все"
+                const selectAllCheckbox = document.getElementById('select-all');
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.addEventListener('change', function() {
+                        const isChecked = this.checked;
+                        document.querySelectorAll('.filter-section input[type="checkbox"]').forEach(checkbox => {
+                            checkbox.checked = isChecked;
+                        });
+                    });
+                }
+
+                // Получение CSRF-токена
+                function getCookie(name) {
+                    let cookieValue = null;
+                    if (document.cookie && document.cookie !== '') {
+                        const cookies = document.cookie.split(';');
+                        for (let i = 0; i < cookies.length; i++) {
+                            const cookie = cookies[i].trim();
+                            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                break;
+                            }
+                        }
+                    }
+                    return cookieValue;
+                }
+                const csrfToken = getCookie('csrftoken');
+
+                // Кнопки "В избранное"
+                const favoriteButtons = document.querySelectorAll('.favorite-button');
+                favoriteButtons.forEach(button => {
+                    button.addEventListener('click', async function(e) {
+                        e.preventDefault();
+                        const isAuthenticated = {{ user.is_authenticated|lower }};
+                        if (!isAuthenticated) {
+                            const authButton = document.getElementById('authButton');
+                            if (authButton) authButton.click();
+                            return;
+                        }
+
+                        const taskId = this.getAttribute('data-task-id');
+                        const formData = new URLSearchParams();
+                        formData.append('task_id', taskId);
+
+                        try {
+                            const response = await fetch("{% url 'tasks:toggle_favorite' subject=subject %}", {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                    'X-CSRFToken': csrfToken,
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                },
+                                body: formData.toString(),
+                                credentials: 'same-origin'
+                            });
+
+                            if (response.redirected) {
+                                window.location.href = response.url;
+                                return;
+                            }
+
+                            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                            const data = await response.json();
+
+                            if (data.success) {
+                                this.classList.toggle('favorite-active', data.is_favorite);
+                                this.textContent = data.is_favorite ? '★' : '☆';
+                                if (data.message) {
+                                    const messageDiv = document.createElement('div');
+                                    messageDiv.textContent = data.message;
+                                    messageDiv.style.position = 'fixed';
+                                    messageDiv.style.top = '20px';
+                                    messageDiv.style.right = '20px';
+                                    messageDiv.style.padding = '10px';
+                                    messageDiv.style.backgroundColor = '#4CAF50';
+                                    messageDiv.style.color = 'white';
+                                    messageDiv.style.borderRadius = '5px';
+                                    messageDiv.style.zIndex = '1000';
+                                    document.body.appendChild(messageDiv);
+                                    setTimeout(() => messageDiv.remove(), 3000);
+                                }
+                            } else {
+                                alert(data.error);
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            alert('Произошла ошибка при обновлении избранного');
+                        }
+                    });
+                });
+
+                // Копирование ссылки
+                document.querySelector('.copy-btn')?.addEventListener('click', function() {
+                    const linkInput = document.querySelector('.variant-link');
+                    linkInput.select();
+                    document.execCommand('copy');
+                    alert('Ссылка скопирована в буфер обмена!');
+                });
+
+                // Показать/скрыть варианты "Поделиться"
+                const shareButton = document.querySelector('.share-btn');
+                if (shareButton) {
+                    shareButton.addEventListener('click', function() {
+                        const shareOptions = document.querySelector('.share-options');
+                        shareOptions.style.display = shareOptions.style.display === 'none' ? 'block' : 'none';
+                    });
+                }
+
+                // Закрытие "Поделиться" при клике вне
+                document.addEventListener('click', function(e) {
+                    const shareContainer = document.querySelector('.share-container');
+                    if (shareContainer && !shareContainer.contains(e.target)) {
+                        document.querySelector('.share-options').style.display = 'none';
+                    }
+                });
+
+                // Проверка ответов
+                const submitButton = document.getElementById('submit-variant');
+                if (submitButton) {
+                    submitButton.addEventListener('click', function() {
+                        const answersTable = document.getElementById('answers-table');
+                        const secondPartSolutions = document.getElementById('second-part-solutions');
+                        const resultsBody = document.getElementById('results-body');
+                        resultsBody.innerHTML = '';
+
+                        document.querySelectorAll('.user-answer').forEach(input => {
+                            const taskUniqueId = input.dataset.uniqueId;
+                            const lineNumber = input.dataset.lineNumber;
+                            const userAnswer = input.value.trim();
+                            const correctAnswer = input.dataset.correct;
+
+                            const row = document.createElement('tr');
+                            const taskCell = document.createElement('td');
+                            const taskLink = document.createElement('a');
+                            taskLink.href = "{% url 'tasks:task_detail' subject=subject unique_id='REPLACE_ME' %}".replace('REPLACE_ME', taskUniqueId);
+                            taskLink.textContent = `Задание №${lineNumber}`;
+                            taskCell.appendChild(taskLink);
+                            row.appendChild(taskCell);
+
+                            const userAnswerCell = document.createElement('td');
+                            userAnswerCell.textContent = userAnswer || 'Не указан';
+                            userAnswerCell.style.color = userAnswer === correctAnswer ? 'green' : 'red';
+                            row.appendChild(userAnswerCell);
+
+                            const correctAnswerCell = document.createElement('td');
+                            correctAnswerCell.textContent = correctAnswer || 'Ответ не указан';
+                            row.appendChild(correctAnswerCell);
+
+                            resultsBody.appendChild(row);
+                        });
+
+                        answersTable.style.display = 'block';
+                        secondPartSolutions.style.display = 'block';
+                    });
+                }
+            });
+        })();
+    </script>
+{% endblock %}

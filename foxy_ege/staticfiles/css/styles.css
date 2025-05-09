@@ -1,0 +1,479 @@
+/* Общие стили */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    color: #4d4d4d;
+}
+
+/* Шапка */
+header {
+    background-color: #ff9a8b; /* Коралловый цвет */
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Распределение элементов по ширине */
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+/* Стиль для выпадающих блоков */
+details {
+    margin-bottom: 15px;
+}
+
+/* Стиль для кнопок раскрытия */
+.toggle-button {
+    background-color: #ff6f61;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.toggle-button:hover {
+    background-color: #ff9a8b;
+}
+
+/* Стрелка для кнопок */
+.toggle-button::after {
+    content: " ▼";
+    margin-left: 8px;
+    transition: transform 0.3s ease;
+}
+
+/* Поворот стрелки при открытом блоке */
+.toggle-button[aria-expanded="true"]::after {
+    transform: rotate(180deg);
+}
+
+/* Стиль для секций фильтров */
+.filter-section {
+    margin-top: 8px;
+    padding: 10px;
+    border: 1px solid #ff6f61;
+    border-radius: 5px;
+    background-color: #fff;
+    max-height: 200px; /* Максимальная высота */
+    overflow-y: auto; /* Добавляем вертикальный скролл */
+    display: none; /* Секции скрыты по умолчанию */
+}
+
+/* Стиль для выпадающих списков */
+.filter-section select {
+    width: 100%;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ff6f61;
+    border-radius: 5px;
+    background-color: white;
+    transition: border-color 0.3s ease;
+}
+
+.filter-section .checkbox {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.filter-section .checkbox label {
+    margin-left: 10px;
+    font-size: 14px;
+    color: #4d4d4d;
+}
+
+.filter-section select:focus {
+    border-color: #ff9a8b; /* Изменение цвета рамки при фокусе */
+}
+
+/* Стиль для контейнера фильтров */
+.filter-container {
+    display: flex;
+    flex-direction: column; /* Вертикальное расположение элементов */
+    gap: 15px; /* Расстояние между элементами */
+    margin-bottom: 20px;
+}
+
+/* Кнопки управления */
+.filter-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Навигация */
+nav {
+    background-color: #ff6f61;
+    display: flex;
+    justify-content: center;
+    padding: 10px 0;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    margin: 0 15px;
+    font-size: 18px;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+nav a:hover {
+    color: #ffe0d6;
+}
+
+/* Основной контент */
+.container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background: transparent;
+}
+
+.section {
+    margin-bottom: 20px;
+}
+
+.section h2 {
+    font-size: 22px;
+    margin-bottom: 10px;
+    color: #ff6f61;
+    text-align: center;
+}
+
+.section p {
+    font-size: 16px;
+    color: #555;
+    text-align: justify;
+    line-height: 1.8;
+}
+
+/* Кнопки */
+button,
+a.btn {
+    background-color: #ff6f61;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-decoration: none;
+    text-align: center;
+    display: inline-block;
+}
+
+button:hover,
+a.btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Таблицы */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background-color: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ffe6ea;
+}
+
+th {
+    background-color: #ff6f61;
+    color: white;
+}
+
+td.green {
+    color: green;
+}
+
+td.red {
+    color: red;
+}
+
+/* Формы */
+form {
+    margin-top: 20px;
+}
+
+form label {
+    display: block;
+    margin: 10px 0 5px;
+    color: #ff6f61;
+    font-weight: bold;
+}
+
+form input[type="text"],
+form textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0 15px;
+    border: 1px solid #ff6f61;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+form button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+/* Комментарии */
+.comment-list {
+    margin-top: 20px;
+}
+
+.comment-list li {
+    padding: 15px;
+    border-bottom: 1px solid #ffe6ea;
+}
+
+.comment-list strong {
+    color: #ff6f61;
+}
+
+.comment-list small {
+    color: #aaa;
+}
+
+/* Иконка для дополнительной информации */
+.info-icon {
+    color: #ff6f61;
+    font-size: 1.2em;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: transform 0.3s ease;
+}
+
+.info-icon:hover {
+    transform: scale(1.2);
+}
+
+.info-box {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #ffe6ea;
+    border-radius: 5px;
+    display: none;
+}
+
+/* Модальные окна */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 30px;
+    border-radius: 15px;
+    width: 400px;
+    text-align: center;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    position: relative;
+}
+
+.modal-content h2 {
+    margin-bottom: 20px;
+    color: #ff6f61;
+    font-size: 24px;
+}
+
+.modal-content form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 100%;
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 15px;
+    margin: 0;
+    border: 2px solid #ff6f61;
+    border-radius: 25px;
+    font-size: 16px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.modal-content input:focus {
+    border-color: #ff9a8b;
+}
+
+.modal-content button {
+    width: 100%;
+    padding: 15px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 25px;
+    font-size: 18px;
+    cursor: pointer;
+    background-color: #ff6f61;
+    color: white;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.modal-content button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.close {
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #ff6f61;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close:hover {
+    color: #ff9a8b;
+}
+
+/* Футер */
+footer {
+    background-color: #ff6f61;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+}
+
+/* Адаптация для мобильных устройств */
+@media (max-width: 768px) {
+    header,
+    nav {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .auth-buttons,
+    nav a {
+        margin: 10px 0;
+    }
+
+    table {
+        font-size: 14px;
+    }
+}
+
+/* Стиль для ссылки на номер задания */
+.task-link {
+    color: #ff6f61; /* Коралловый цвет */
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.task-link:hover {
+    color: #ff9a8b; /* Изменение цвета при наведении */
+}
+
+/* Стили для контейнера фильтров */
+.filter-container {
+    display: flex;
+    flex-direction: column; /* Вертикальное расположение элементов */
+    gap: 15px; /* Расстояние между элементами */
+    margin-bottom: 20px;
+}
+
+/* Стили для каждого фильтра */
+.filter-item {
+    display: flex;
+    flex-direction: column; /* Вертикальное расположение текста и списка */
+    gap: 5px; /* Расстояние между текстом и списком */
+}
+
+/* Стили для меток (label) */
+.filter-item label {
+    font-size: 14px;
+    font-weight: bold;
+    color: #ff6f61; /* Коралловый цвет */
+    white-space: nowrap; /* Запрещаем перенос текста */
+}
+
+/* Стили для выпадающих списков */
+.filter-item select {
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ff6f61;
+    border-radius: 5px;
+    background-color: white;
+    transition: border-color 0.3s ease;
+    width: 100%;
+    max-width: 300px;
+}
+
+.filter-item select:focus {
+    border-color: #ff9a8b; /* Изменение цвета рамки при фокусе */
+}
+
+/* Стиль для кнопки "Применить фильтр" */
+.filter-button {
+    background-color: #ff6f61;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.filter-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.solution-image {
+    display: block;           /* Каждое изображение на новой строке */
+    margin: 10px 0;          /* Отступ сверху и снизу для читаемости */
+    max-width: 100%;         /* Ограничение ширины контейнером */
+}

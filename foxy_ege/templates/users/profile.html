@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Личный кабинет{% endblock %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="{% static 'css/profile.css' %}">
+    <style>
+        .profile-container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .profile-block {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            flex: 1;
+            min-width: 300px;
+            max-width: 450px;
+            box-sizing: border-box;
+        }
+
+        .profile-block h3 {
+            color: #ff6f61;
+            margin: 0 0 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .profile-block p {
+            margin: 5px 0;
+            color: #4d4d4d;
+        }
+
+        .task-list, .comment-list, .student-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .task-list li, .comment-list li, .student-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .task-list li:last-child, .comment-list li:last-child, .student-list li:last-child {
+            border-bottom: none;
+        }
+
+        .task-preview {
+            color: #777;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+
+        .comment-meta {
+            font-size: 0.8em;
+            color: #888;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            background-color: #ff6f61;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #ff9a8b;
+            color: white;
+        }
+
+        .task-count {
+            font-size: 0.8em;
+            color: #888;
+        }
+
+        .personal-data form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .personal-data label {
+            color: #ff6f61;
+            font-weight: bold;
+        }
+
+        .personal-data input {
+            padding: 8px;
+            border: 2px solid #ff6f61;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .personal-data button {
+            background-color: #ff6f61;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .personal-data button:hover {
+            background-color: #ff9a8b;
+        }
+
+        .teacher-code {
+            font-weight: bold;
+            color: #ff6f61;
+        }
+
+        .profile-section a {
+            color: #ff6f61;
+            text-decoration: none;
+        }
+
+        .profile-section a:hover {
+            color: #ff9a8b;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <h2 style="width: 100%; text-align: center; color: #ff6f61;">Личный кабинет</h2>
+
+    <div class="profile-block">
+        {% if user.role == "teacher" %}
+            <h3>Назначенные ДЗ</h3>
+            <a href="{% url 'users:create_homework' subject=subject|default:'math' %}" class="btn">Создать ДЗ</a>
+            {% if assigned_homeworks %}
+                {% for homework in assigned_homeworks %}
+                    <p>{{ homework.title }} (до {{ homework.due_date }}) 
+                       <a href="{% url 'users:homework_detail' subject=subject homework_id=homework.id %}" class="btn">Подробнее</a></p>
+                {% endfor %}
+            {% else %}
+                <p>Вы не назначали домашние задания.</p>
+            {% endif %}
+        {% elif user.role == "student" %}
+            <h3>Мои домашние задания</h3>
+            <a href="{% url 'users:get_homework' subject=subject %}" class="btn">Выполнить ДЗ</a>
+            {% if received_homeworks %}
+                {% for student_homework in received_homeworks %}
+                    <p>{{ student_homework.homework.title }} (до {{ student_homework.homework.due_date }}) 
+                       <a href="{% url 'users:get_homework' subject=subject %}?homework_id={{ student_homework.id }}" class="btn">
+                           {% if student_homework.status == 'completed' %}Просмотреть{% else %}Приступить{% endif %}
+                       </a></p>
+                {% endfor %}
+            {% else %}
+                <p>У вас нет домашних заданий.</p>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <!-- Блок учеников (для учителя) или учителей (для ученика) -->
+    {% if user.role == "teacher" %}
+    <div class="profile-block">
+        <h3>Ученики</h3>
+        {% if students %}
+            <ul class="student-list">
+            {% for student in students %}
+                <li>
+                    <span>{{ student.display_name|default:student.username }}</span>
+                    <input type="text" value="{{ student.display_name|default:student.username }}" data-student-id="{{ student.id }}" class="student-name" style="display: none;">
+                    <button class="edit-name-btn" data-student-id="{{ student.id }}">Изменить имя</button>
+                    <button class="save-name-btn" data-student-id="{{ student.id }}" style="display: none;">Сохранить</button>
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>У вас пока нет учеников.</p>
+        {% endif %}
+    </div>
+    {% elif user.role == "student" %}
+    <div class="profile-block">
+        <h3>Ваши учителя</h3>
+        {% if teachers %}
+            <ul class="student-list">
+            {% for teacher in teachers %}
+                <li>{{ teacher.display_name|default:teacher.username }} (Код: {{ teacher.teacher_code }})</li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>У вас пока нет учителей.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Блок личных данных -->
+    <div class="profile-block personal-data">
+        <h3>Личные данные</h3>
+        {% if user.role == "teacher" %}
+            <p>Ваш код для учеников: <span class="teacher-code">{{ teacher_code }}</span></p>
+            <form method="post" action="{% url 'users:profile' %}">
+                {% csrf_token %}
+                <label for="first_name">Имя:</label>
+                <input type="text" name="first_name" id="first_name" value="{{ user.first_name }}">
+                <label for="last_name">Фамилия:</label>
+                <input type="text" name="last_name" id="last_name" value="{{ user.last_name }}">
+                <label for="specialty">Специальность:</label>
+                <input type="text" name="specialty" id="specialty" value="{{ user.specialty|default:'' }}">
+                <button type="submit">Сохранить</button>
+            </form>
+        {% elif user.role == "student" %}
+            <form method="post" action="{% url 'users:profile' %}">
+                {% csrf_token %}
+                <label for="teacher_code">ID вашего учителя:</label>
+                <input type="text" id="teacher_code" name="teacher_code">
+                <button type="submit">Привязаться</button>
+            </form>
+        {% endif %}
+    </div>
+
+    <!-- Блок комментариев -->
+    <div class="profile-block">
+        <h3>Мои комментарии</h3>
+        {% if comments %}
+            <ul class="comment-list">
+            {% for comment in comments %}
+                <li>
+                    <div class="comment-text">{{ comment.text|default:"(без текста)" }}</div>
+                    {% if comment.task.subject and comment.task.unique_id %}
+                        <div class="comment-meta">к задаче <a href="{% url 'tasks:task_detail' subject=comment.task.subject unique_id=comment.task.unique_id %}">{{ comment.task.unique_id }}</a></div>
+                    {% else %}
+                        <div class="comment-meta">к задаче (некорректные данные)</div>
+                    {% endif %}
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>У вас пока нет комментариев.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const editButtons = document.querySelectorAll('.edit-name-btn');
+    const saveButtons = document.querySelectorAll('.save-name-btn');
+
+    editButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const studentId = this.dataset.studentId;
+            const input = document.querySelector(`.student-name[data-student-id="${studentId}"]`);
+            const span = this.previousElementSibling.previousElementSibling;
+            span.style.display = 'none';
+            input.style.display = 'inline';
+            this.style.display = 'none';
+            document.querySelector(`.save-name-btn[data-student-id="${studentId}"]`).style.display = 'inline';
+        });
+    });
+});
+</script>
+{% endblock %}

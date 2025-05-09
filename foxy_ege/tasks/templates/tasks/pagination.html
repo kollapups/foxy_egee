@@ -1,0 +1,38 @@
+{% if tasks.has_other_pages %}
+    <div class="pagination">
+        <span class="step-links">
+            {% if tasks.has_previous %}
+                <a href="?{% querystring page=1 per_page=per_page %}" class="pagination-link">« Первая</a>
+                <a href="?{% querystring page=tasks.previous_page_number per_page=per_page %}" class="pagination-link">Предыдущая</a>
+            {% endif %}
+
+            <span class="current">
+                Страница {{ tasks.number }} из {{ tasks.paginator.num_pages }}
+            </span>
+
+            {% if tasks.has_next %}
+                <a href="?{% querystring page=tasks.next_page_number per_page=per_page %}" class="pagination-link">Следующая</a>
+                <a href="?{% querystring page=tasks.paginator.num_pages per_page=per_page %}" class="pagination-link">Последняя »</a>
+            {% endif %}
+        </span>
+    </div>
+{% endif %}
+
+<style>
+    .pagination {
+        margin: 20px 0;
+        text-align: center;
+    }
+    .pagination-link {
+        padding: 5px 10px;
+        margin: 0 5px;
+        text-decoration: none;
+        color: #ff6f61;
+        border: 1px solid #ff6f61;
+        border-radius: 3px;
+    }
+    .current {
+        padding: 5px 10px;
+        color: #333;
+    }
+</style>

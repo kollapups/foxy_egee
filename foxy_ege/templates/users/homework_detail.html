@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Детали ДЗ - {{ homework.title }}
+{% endblock %}
+
+{% block extra_styles %}
+    <style>
+        .homework-details { margin: 20px 0; }
+        .student-results { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; }
+        .dynamic-table { width: 100%; border-collapse: collapse; display: none; }
+        .dynamic-table th, .dynamic-table td { border: 1px solid #ddd; padding: 8px; }
+        .toggle-table-btn { margin-left: 10px; background-color: #4CAF50; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        .toggle-table-btn:hover { background-color: #45a049; }
+        .btn { display: inline-block; padding: 8px 16px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <h1>{{ homework.title }}</h1>
+    <div class="homework-details">
+        <p><strong>Описание:</strong> {{ homework.description|default:"Не указано" }}</p>
+        <p><strong>Срок сдачи:</strong> {{ homework.due_date|default:"Не указан" }}</p>
+        <p><strong>Тип:</strong> {{ homework.get_homework_type_display }}</p>
+        <h3>Задания:</h3>
+        {% if homework.homework_type == "upload" %}
+            {% for file in homework.files.all %}
+                <p><a href="{{ file.file.url }}" target="_blank" download>{{ file.file.name }}</a></p>
+            {% endfor %}
+            {% if homework.answers %}
+                <table class="dynamic-table" style="display: table;">
+                    <thead>
+                        <tr>
+                            <th>№ задания</th>
+                            <th>Правильный ответ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for num, answer in homework.answers.items %}
+                            <tr>
+                                <td>{{ num }}</td>
+                                <td>{{ answer }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        {% else %}
+            <ul>
+                {% for task in homework.tasks.all %}
+                    <li>
+                        <a href="{% url 'tasks:task_detail' subject=subject unique_id=task.unique_id %}">
+                            Задача {{ task.unique_id }}: {{ task.text|truncatewords:30 }}
+                        </a>
+                        {% if task.answer %}
+                            <p>Правильный ответ: {{ task.answer }}</p>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <h3>Результаты учеников:</h3>
+        {% for student_homework in homework.student_submissions.all %}
+            <div class="student-results">
+                <p>
+                    <strong>{{ student_homework.student.display_name|default:student_homework.student.username }}</strong> - 
+                    {% if student_homework.status == "completed" %}
+                        {% if student_homework.results and student_homework.results|length > 0 %}
+                            {% with total_count=student_homework.results|length correct_count=0 %}
+                                {% for task_num, result in student_homework.results.items %}
+                                    {% if result.is_correct %}
+                                        {% with correct_count=correct_count|add:1 %}{% endwith %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ correct_count }}/{{ total_count }} ({{ student_homework.percentage|floatformat:0 }}%)
+                                <button type="button" class="toggle-table-btn" data-table-id="table-{{ student_homework.id }}">
+                                    Смотреть таблицу ответов
+                                </button>
+                                <table class="dynamic-table" id="table-{{ student_homework.id }}">
+                                    <thead>
+                                        <tr>
+                                            <th>№ задания</th>
+                                            <th>Ответ ученика</th>
+                                            <th>Правильный ответ</th>
+                                            <th>Статус</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for task_num, result in student_homework.results.items %}
+                                            <tr style="background-color: {% if result.is_correct %}#e0ffe0{% else %}#ffe0e0{% endif %}">
+                                                <td>{{ task_num }}</td>
+                                                <td>{{ result.student_answer|default:"Не указано" }}</td>
+                                                <td>{{ result.correct_answer }}</td>
+                                                <td>{{ result.is_correct|yesno:"Верно,Неверно" }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% endwith %}
+                        {% else %}
+                            Ожидает проверки
+                            {% for file in student_homework.submission_files.all %}
+                                <p><a href="{{ file.file.url }}" target="_blank" download>Скачать решение ({{ file.file.name }})</a></p>
+                            {% endfor %}
+                        {% endif %}
+                    {% else %}
+                        Не сдано
+                    {% endif %}
+                </p>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.toggle-table-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const tableId = this.getAttribute('data-table-id');
+                    const table = document.getElementById(tableId);
+                    if (table) {
+                        table.style.display = table.style.display === 'none' || table.style.display === '' ? 'table' : 'none';
+                    } else {
+                        console.error('Таблица с ID ' + tableId + ' не найдена');
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

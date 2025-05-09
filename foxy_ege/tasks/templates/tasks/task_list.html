@@ -1,0 +1,490 @@
+{% extends "base.html" %}
+{% load static task_tags %}
+{% load static custom_filters %}
+{% block title %}
+    Банк заданий - {{ subject|title }} - FoxyEGE.ru
+{% endblock %}
+
+{% block og_title %}
+    Банк заданий - {{ subject|title }} - FoxyEGE.ru
+{% endblock %}
+{% block og_description %}
+    Банк заданий для подготовки к ЕГЭ по {{ subject|title }}. Фильтруйте по темам, подтемам и номерам заданий.
+{% endblock %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="{% static 'css/new_task_list.css' %}">
+    <style>
+        .solution-step {
+            margin-bottom: 15px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <h1>Банк заданий</h1>
+
+    <div id="generator-settings">
+        <h2>Настройте фильтр</h2>
+        <form method="GET" action="{% url 'tasks:task_list' subject=subject %}">
+            <div class="filter-item">
+                <button type="button" class="toggle-button" data-target="parts" aria-expanded="false">Части экзамена</button>
+                <div id="parts" class="filter-section" style="display: none;">
+                    <ul class="filter-options">
+                        <li>
+                            <input type="radio" name="exam_part" value="" id="exam_part_all" {% if not request.GET.exam_part %}checked{% endif %}>
+                            <label for="exam_part_all">Все части</label>
+                        </li>
+                        {% for part in exam_parts %}
+                            <li>
+                                <input type="radio" name="exam_part" value="{{ part.id }}" id="exam_part_{{ part.id }}" {% if request.GET.exam_part == part.id|stringformat:"s" %}checked{% endif %}>
+                                <label for="exam_part_{{ part.id }}">{{ part.name }}</label>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="filter-item">
+                <button type="button" class="toggle-button" data-target="exam_lines" aria-expanded="false">Задания экзамена</button>
+                <div id="exam_lines" class="filter-section" style="display: none;">
+                    <ul class="filter-options">
+                        <li>
+                            <input type="radio" name="exam_line" value="" id="exam_line_all" {% if not request.GET.exam_line %}checked{% endif %}>
+                            <label for="exam_line_all">Все задания</label>
+                        </li>
+                        {% for line in exam_lines %}
+                            <li>
+                                <input type="radio" name="exam_line" value="{{ line.id }}" id="exam_line_{{ line.id }}" {% if request.GET.exam_line == line.id|stringformat:"s" %}checked{% endif %}>
+                                <label for="exam_line_{{ line.id }}">Задание {{ line.number }}</label>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="filter-item">
+                <button type="button" class="toggle-button" data-target="topics" aria-expanded="false">Темы</button>
+                <div id="topics" class="filter-section" style="display: none;">
+                    <ul class="filter-options">
+                        <li>
+                            <input type="radio" name="topic" value="" id="topic_all" {% if not request.GET.topic %}checked{% endif %}>
+                            <label for="topic_all">Все темы</label>
+                        </li>
+                        {% for topic in topics %}
+                            <li>
+                                <input type="radio" name="topic" value="{{ topic.id }}" id="topic_{{ topic.id }}" {% if request.GET.topic == topic.id|stringformat:"s" %}checked{% endif %}>
+                                <label for="topic_{{ topic.id }}">{{ topic.name }}</label>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="filter-item">
+                <button type="button" class="toggle-button" data-target="subtopics" aria-expanded="false">Подтемы</button>
+                <div id="subtopics" class="filter-section" style="display: none;">
+                    <ul class="filter-options">
+                        <li>
+                            <input type="radio" name="subtopic" value="" id="subtopic_all" {% if not request.GET.subtopic %}checked{% endif %}>
+                            <label for="subtopic_all">Все подтемы</label>
+                        </li>
+                        {% for subtopic in subtopics %}
+                            <li>
+                                <input type="radio" name="subtopic" value="{{ subtopic.id }}" id="subtopic_{{ subtopic.id }}" {% if request.GET.subtopic == subtopic.id|stringformat:"s" %}checked{% endif %}>
+                                <label for="subtopic_{{ subtopic.id }}">{{ subtopic.name }}</label>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="filter-item">
+                <button type="button" class="toggle-button" data-target="sources" aria-expanded="false">Источники</button>
+                <div id="sources" class="filter-section" style="display: none;">
+                    <ul class="filter-options">
+                        <li>
+                            <input type="radio" name="source" value="" id="source_all" {% if not request.GET.source %}checked{% endif %}>
+                            <label for="source_all">Все источники</label>
+                        </li>
+                        {% for source in sources %}
+                            <li>
+                                <input type="radio" name="source" value="{{ source.id }}" id="source_{{ source.id }}" {% if request.GET.source == source.id|stringformat:"s" %}checked{% endif %}>
+                                <label for="source_{{ source.id }}">{{ source.name }}</label>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="filter-item">
+                <label for="search_text">Поиск по тексту:</label>
+                <input type="text" name="search_text" id="search_text" value="{{ request.GET.search_text|default:'' }}" placeholder="Введите текст для поиска">
+            </div>
+
+            <div class="filter-item">
+                <label for="per_page">Заданий на странице:</label>
+                <select name="per_page" id="per_page" onchange="this.form.submit()">
+                    <option value="20" {% if per_page == "20" %}selected{% endif %}>20</option>
+                    <option value="50" {% if per_page == "50" %}selected{% endif %}>50</option>
+                    <option value="100" {% if per_page == "100" %}selected{% endif %}>100</option>
+                </select>
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="filter-button">Применить</button>
+                <a href="{% url 'tasks:task_list' subject=subject %}" class="filter-button reset-button">Сбросить</a>
+            </div>
+        </form>
+
+        {% if request.GET %}
+            <div class="selected-filters">
+                <h3>Выбранные фильтры:</h3>
+                <ul>
+                    {% if request.GET.exam_part %}
+                        <li>Часть экзамена: {% with part=exam_parts|get_item:request.GET.exam_part %}{{ part.name|default:"Все части" }}{% endwith %}</li>
+                    {% endif %}
+                    {% if request.GET.exam_line %}
+                        <li>Задание: {% with line=exam_lines|get_item:request.GET.exam_line %}Задание {{ line.number|default:"Все задания" }}{% endwith %}</li>
+                    {% endif %}
+                    {% if request.GET.topic %}
+                        <li>Тема: {% with topic=topics|get_item:request.GET.topic %}{{ topic.name|default:"Все темы" }}{% endwith %}</li>
+                    {% endif %}
+                    {% if request.GET.subtopic %}
+                        <li>Подтема: {% with subtopic=subtopics|get_item:request.GET.subtopic %}{{ subtopic.name|default:"Все подтемы" }}{% endwith %}</li>
+                    {% endif %}
+                    {% if request.GET.source %}
+                        <li>Источник: {% with source=sources|get_item:request.GET.source %}{{ source.name|default:"Все источники" }}{% endwith %}</li>
+                    {% endif %}
+                    {% if request.GET.search_text %}
+                        <li>Поиск по тексту: {{ request.GET.search_text }}</li>
+                    {% endif %}
+                    <li>Заданий на странице: {{ per_page }}</li>
+                </ul>
+            </div>
+        {% endif %}
+
+        <div style="margin-top: 20px; text-align: right;">
+            <a href="{% url 'tasks:print_settings' subject=subject %}?{% for key, value in request.GET.items %}{{ key }}={{ value }}&{% endfor %}" class="print-btn" target="_blank">
+                <img src="{% static 'images/print_icon.png' %}" alt="Print" style="width: 70px; vertical-align: middle;"> Версия для печати
+            </a>
+        </div>
+    </div>
+
+    <hr>
+
+    {% if tasks %}
+    <ul class="task-list">
+        {% for task in tasks %}
+            <li class="task-item">
+                <a href="{% url 'tasks:task_detail' subject=subject unique_id=task.unique_id %}">
+                    {{ task.exam_line|default:"Не указано" }}, (№{{ task.unique_id }} в банке заданий)
+                </a>
+                <button class="favorite-button {% if task.unique_id in favorite_task_ids %}favorite-active{% endif %}" data-task-id="{{ task.unique_id }}">{% if task.unique_id in favorite_task_ids %}★{% else %}☆{% endif %}</button>
+                <div class="task-content">
+                    <div class="task-text-content">
+                        <div class="task-text">
+                            {{ task.text_svg|safe|default:task.text }}
+                        </div>
+                        {% if task.latex_formula_svg %}
+                            <div class="latex-formula">
+                                {{ task.latex_formula_svg|safe }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% if task.image %}
+                        <div class="task-image-container">
+                            <img 
+                                src="{{ task.image.url }}" 
+                                alt="Изображение к заданию" 
+                                class="task-image"
+                                data-exam-line="{{ task.exam_line.number }}"
+                            >
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="task-buttons">
+                    {% if task.has_solution %}
+                        <button class="solution-button" data-task-id="{{ task.unique_id }}">Решение</button>
+                    {% else %}
+                        <p>Решение в разработке.</p>
+                    {% endif %}
+                    <span class="info-icon" data-task-id="{{ task.unique_id }}">ℹ️</span>
+                    <button class="print-cart-button" data-task-id="{{ task.unique_id }}" data-task-title="{{ task.exam_line|default:'Не указано' }}, (№{{ task.unique_id }})">🖨️</button>
+                </div>
+                {% if task.has_solution %}
+                    <div id="solution-{{ task.unique_id }}" class="solution-content">
+                        {% if task.solution_text_svg %}
+                            <div class="solution-text">
+                                {% for step in task.solution_text_svg|split_steps %}
+                                    <div class="solution-step">
+                                        {{ step|safe }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% for solution_image in task.solution_images.all %}
+                            <div class="solution-image">
+                                <img src="{{ solution_image.image.url }}" style="width: {{ solution_image.width }}px;" alt="Solution image">
+                            </div>
+                        {% endfor %}
+                        {% if task.answer %}
+                            <p><strong>Ответ:</strong> {{ task.answer }}</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                <div id="info-{{ task.unique_id }}" class="info-box">
+                    <p><strong>Тема:</strong> {{ task.topic|default:"Не указана" }}</p>
+                    <p><strong>Подтема:</strong> {{ task.subtopic|default:"Не указана" }}</p>
+                    <p><strong>Задание:</strong> {{ task.exam_line|default:"Не указано" }}</p>
+                    <p><strong>Источник:</strong> {{ task.source|default:"Не указан" }}</p>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+        {% include "tasks/pagination.html" %}
+    {% else %}
+        <p>Задания не найдены.</p>
+    {% endif %}
+    <div id="print-cart" class="print-cart">
+        <button id="print-cart-toggle">🖨️ <span id="print-cart-count">0</span></button>
+        <div id="print-cart-content" class="print-cart-content">
+            <h3>Корзина для печати</h3>
+            <ul id="print-cart-items"></ul>
+            <div class="print-cart-actions">
+                <button id="print-cart-print" class="filter-button">Печать</button>
+                <button id="print-cart-clear" class="filter-button reset-button">Очистить</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            const csrfToken = getCookie('csrftoken');
+
+            // Обработчики для фильтров
+            const toggleButtons = document.querySelectorAll('.toggle-button');
+            toggleButtons.forEach(button => {
+                button.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation(); // Добавлено, чтобы предотвратить всплытие
+                    console.log('Button clicked:', this); // лог
+                    const targetId = this.getAttribute('data-target');
+                    const section = document.getElementById(targetId);
+                    if (!section) {
+                        console.error(`Секция с ID ${targetId} не найдена`);
+                        return;
+                    }
+                    const isVisible = section.style.display === 'block';
+                    document.querySelectorAll('.filter-section').forEach(sec => {
+                        sec.style.display = 'none';
+                        const relatedButton = sec.previousElementSibling;
+                        if (relatedButton && relatedButton.classList.contains('toggle-button')) {
+                            relatedButton.setAttribute('aria-expanded', 'false');
+                        }
+                    });
+                    section.style.display = isVisible ? 'none' : 'block';
+                    this.setAttribute('aria-expanded', isVisible ? 'false' : 'true');
+                    console.log('aria-expanded set to:', this.getAttribute('aria-expanded')); // лог
+                });
+            });
+
+            // Закрытие фильтров при клике вне
+            document.addEventListener('click', function(event) {
+                const isClickInside = event.target.closest('.filter-item') || event.target.closest('.filter-section');
+                if (!isClickInside) {
+                    document.querySelectorAll('.filter-section').forEach(section => {
+                        section.style.display = 'none';
+                        const toggleButton = section.previousElementSibling;
+                        if (toggleButton && toggleButton.classList.contains('toggle-button')) {
+                            toggleButton.setAttribute('aria-expanded', 'false');
+                        }
+                    });
+                }
+            });
+
+            // Обработчик для кнопок "Решение"
+            const solutionButtons = document.querySelectorAll('.solution-button');
+            solutionButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const taskId = this.getAttribute('data-task-id');
+                    const solutionContent = document.getElementById(`solution-${taskId}`);
+                    if (solutionContent) {
+                        if (solutionContent.style.display === 'none' || !solutionContent.style.display) {
+                            solutionContent.style.display = 'block';
+                            this.textContent = 'Скрыть решение';
+                        } else {
+                            solutionContent.style.display = 'none';
+                            this.textContent = 'Решение';
+                        }
+                    }
+                });
+            });
+
+            // Обработчик для иконок информации
+            const infoIcons = document.querySelectorAll('.info-icon');
+            infoIcons.forEach(icon => {
+                icon.addEventListener('click', function() {
+                    const taskId = this.getAttribute('data-task-id');
+                    const infoBox = document.getElementById(`info-${taskId}`);
+                    if (infoBox) {
+                        if (infoBox.style.display === 'none' || !infoBox.style.display) {
+                            infoBox.style.display = 'block';
+                        } else {
+                            infoBox.style.display = 'none';
+                        }
+                    }
+                });
+            });
+
+            // Обработчик для кнопок "В избранное"
+            const favoriteButtons = document.querySelectorAll('.favorite-button');
+            favoriteButtons.forEach(button => {
+                button.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    const isAuthenticated = {{ user.is_authenticated|lower }};
+                    if (!isAuthenticated) {
+                        const authButton = document.getElementById('authButton');
+                        if (authButton) authButton.click();
+                        return;
+                    }
+                    const taskId = this.getAttribute('data-task-id');
+                    const formData = new URLSearchParams();
+                    formData.append('task_id', taskId);
+                    try {
+                        const response = await fetch("{% url 'tasks:toggle_favorite' subject=subject %}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-CSRFToken': csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: formData.toString(),
+                            credentials: 'same-origin'
+                        });
+                        if (response.redirected) {
+                            window.location.href = response.url;
+                            return;
+                        }
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                        const data = await response.json();
+                        if (data.success) {
+                            this.classList.toggle('favorite-active', data.is_favorite);
+                            this.textContent = data.is_favorite ? '★' : '☆';
+                            if (data.message) {
+                                const messageDiv = document.createElement('div');
+                                messageDiv.textContent = data.message;
+                                messageDiv.style.position = 'fixed';
+                                messageDiv.style.top = '20px';
+                                messageDiv.style.right = '20px';
+                                messageDiv.style.padding = '10px';
+                                messageDiv.style.backgroundColor = '#4CAF50';
+                                messageDiv.style.color = 'white';
+                                messageDiv.style.borderRadius = '5px';
+                                messageDiv.style.zIndex = '1000';
+                                document.body.appendChild(messageDiv);
+                                setTimeout(() => messageDiv.remove(), 3000);
+                            }
+                        } else {
+                            console.error('Error:', data.error);
+                            alert(data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Произошла ошибка при обновлении избранного');
+                    }
+                });
+            });
+
+            // Логика корзины для печати
+            let printCart = JSON.parse(localStorage.getItem('printCart')) || [];
+            const printCartItems = document.getElementById('print-cart-items');
+            const printCartCount = document.getElementById('print-cart-count');
+            const printCartToggle = document.getElementById('print-cart-toggle');
+            const printCartContent = document.getElementById('print-cart-content');
+            const printCartPrint = document.getElementById('print-cart-print');
+            const printCartClear = document.getElementById('print-cart-clear');
+            const printCartContainer = document.getElementById('print-cart');
+
+            const taskDetailUrlBase = "{% url 'tasks:task_detail' subject=subject unique_id='TASK_ID_PLACEHOLDER' %}";
+
+            updatePrintCart();
+
+            document.querySelectorAll('.print-cart-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const taskId = this.dataset.taskId;
+                    const taskTitle = this.dataset.taskTitle;
+                    if (!printCart.some(item => item.id === taskId)) {
+                        printCart.push({ id: taskId, title: taskTitle });
+                        localStorage.setItem('printCart', JSON.stringify(printCart));
+                        updatePrintCart();
+                    }
+                });
+            });
+
+            function updatePrintCart() {
+                printCartItems.innerHTML = '';
+                printCart.forEach(item => {
+                    const li = document.createElement('li');
+                    const taskUrl = taskDetailUrlBase.replace('TASK_ID_PLACEHOLDER', item.id);
+                    li.innerHTML = `
+                        <a href="${taskUrl}" target="_blank">${item.title}</a>
+                        <button class="print-cart-remove" data-task-id="${item.id}">✖</button>
+                    `;
+                    printCartItems.appendChild(li);
+                });
+                printCartCount.textContent = printCart.length;
+
+                document.querySelectorAll('.print-cart-remove').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const taskId = this.dataset.taskId;
+                        printCart = printCart.filter(item => item.id !== taskId);
+                        localStorage.setItem('printCart', JSON.stringify(printCart));
+                        updatePrintCart();
+                    });
+                });
+            }
+
+            printCartToggle.addEventListener('click', function() {
+                printCartContent.style.display = printCartContent.style.display === 'block' ? 'none' : 'block';
+            });
+
+            printCartPrint.addEventListener('click', function() {
+                if (printCart.length === 0) {
+                    alert('Корзина для печати пуста!');
+                    return;
+                }
+                const taskIds = printCart.map(item => `task_ids=${item.id}`).join('&');
+                window.open(`{% url 'tasks:print_settings_cart' subject=subject %}?${taskIds}`, '_blank');
+            });
+
+            printCartClear.addEventListener('click', function() {
+                printCart = [];
+                localStorage.setItem('printCart', JSON.stringify(printCart));
+                updatePrintCart();
+            });
+
+            document.addEventListener('click', function(event) {
+                if (!printCartContainer.contains(event.target) && !event.target.closest('.print-cart-button')) {
+                    printCartContent.style.display = 'none';
+                }
+            });
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,128 @@
+/* Стили для основного контента на главной странице */
+.main-content h1 {
+    font-size: 28px;
+    color: #ff6f61;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+section {
+    margin-bottom: 30px;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+}
+
+section h2 {
+    font-size: 22px;
+    color: #ff6f61;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+section p {
+    font-size: 16px;
+    color: #555;
+    text-align: justify;
+    line-height: 1.8;
+    margin-bottom: 15px;
+}
+
+section .btn {
+    display: block;
+    max-width: 300px;
+    margin: 0 auto;
+    background-color: #ff6f61;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-decoration: none;
+    text-align: center;
+}
+
+section .btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+hr {
+    border: 0;
+    height: 1px;
+    background-color: #ffe6ea;
+    margin: 20px 0;
+}
+
+@media (min-width: 769px) {
+    .main-content {
+        margin-left: 160px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .link-wrapper {
+        flex-direction: row; /* Оставляем горизонтальное расположение */
+        align-items: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .filter-section {
+        max-width: 100%;
+    }
+    .toggle-button {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+    .main-content h1 {
+        font-size: 24px;
+        text-align: center;
+    }
+    .main-content h2 {
+        font-size: 20px;
+        text-align: center;
+    }
+    .filter-section {
+        padding: 8px;
+    }
+    .main-content {
+        margin-left: 0;
+        margin-right: 0;
+        padding: 0 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .filter-section {
+        font-size: 14px;
+    }
+    .filter-button {
+        font-size: 14px;
+        padding: 8px 12px;
+    }
+    .main-content {
+        margin-left: 160px;
+    }
+}
+
+@media (min-width: 769px) {
+    .main-content {
+        margin-left: 160px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .main-content {
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: 90px; /* 160px для сайдбара + 15px отступ */
+        padding-right: 90px;
+    }
+}

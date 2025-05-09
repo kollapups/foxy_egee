@@ -1,0 +1,274 @@
+:root {
+    --primary-color: #ff6f61;
+    --hover-color: #ff9a8b;
+}
+
+#generator-settings {
+    margin: 20px 0;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+    position: relative;
+}
+
+.filter-item {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 15px;
+    margin-right: 10px;
+}
+
+.toggle-button {
+    display: inline-block;
+    padding: 8px 12px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    white-space: nowrap;
+}
+
+.toggle-button:hover {
+    background-color: var(--hover-color);
+}
+
+.toggle-button::after {
+    content: " ▼";
+    margin-left: 8px;
+    transition: transform 0.3s ease;
+    display: inline-block;
+}
+
+.toggle-button[aria-expanded="true"]::after {
+    transform: rotate(180deg);
+}
+
+.filter-section {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 900;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    overflow-y: auto;
+    display: none;
+    min-width: 200px;
+    max-height: 200px;
+}
+
+.filter-options {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.filter-options label {
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.filter-item input[type="text"] {
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+    padding: 5px;
+}
+
+.filter-item input[type="text"]:focus {
+    outline: none;
+    border-color: #ff6f61;
+}
+
+.filter-item select {
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.filter-button {
+    padding: 10px 20px;
+    background-color: #ff6f61;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+    position: relative;
+    padding-left: 30px;
+    font-size: 16px;
+}
+.filter-button::before {
+    content: "\f0b0"; /* fa-filter */
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.filter-button:hover {
+    background-color: #ff9a8b;
+}
+.filter-button.reset-button {
+    background-color: #ddd;
+    color: #333;
+    padding-left: 30px;
+    text-decoration: none;
+    font-weight: bold;
+}
+.filter-button.reset-button::before {
+    content: "\f021"; /* fa-sync-alt */
+    font-family: "Font Awesome 6 Free";
+    font-weight: bold;
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.filter-button.reset-button:hover {
+    background-color: #ccc;
+}
+
+.selected-filters {
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #ff6f61;
+    border-radius: 10px;
+}
+
+.selected-filters ul {
+    list-style: none;
+    padding: 0;
+}
+
+.task-list {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0;
+}
+
+.task-content {
+    display: flex;
+    align-items: flex-start; /* Выравнивание по верхнему краю */
+    gap: 20px; /* Отступ между текстом и изображением */
+    margin-bottom: 15px; /* Отступ снизу для разделения от кнопок */
+}
+
+.task-text-content {
+    flex: 1; /* Текст занимает доступное пространство */
+}
+
+.task-item {
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 10px;
+}
+
+.task-image-container {
+    flex-shrink: 0; /* Изображение не сжимается */
+    text-align: right; /* Выравнивание изображения по правому краю */
+}
+
+.solution-content {
+    display: none;
+}
+
+.info-box {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #ffe6ea;
+    border-radius: 5px;
+    display: none;
+}
+
+.info-icon {
+    color: #ff6f61;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.info-icon:hover {
+    transform: scale(1.2);
+}
+
+a {
+    color: #ff6f61;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+a:hover {
+    color: #ff9a8b;
+    text-decoration: underline;
+}
+
+
+.print-link-container {
+    margin-top: 20px;
+    text-align: right;
+}
+
+.print-icon {
+    width: 70px;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+.solution-button {
+    padding: 5px 10px;
+    background-color: #ff6f61;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+    font-weight: bold;
+}
+
+.solution-button:hover {
+    background-color: #ff9a8b;
+}
+
+.favorite-button {
+    padding: 1px 5px;
+    background-color: #ff6f61;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+    min-width: 30px;
+    text-align: center;
+}
+
+.favorite-button:hover {
+    background-color: #ff9a8b;
+}
+
+.favorite-button.favorite-active {
+    background-color: #ffd700;
+    color: #000;
+}

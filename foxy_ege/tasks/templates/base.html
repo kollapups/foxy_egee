@@ -1,0 +1,628 @@
+{% load static %}
+{% load cookie_tags %}
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Подготовка к ЕГЭ по {{ subject|capfirst }}{% endblock %}</title>
+    <meta property="og:title" content="{% block og_title %}Подготовка к ЕГЭ по {{ subject|capfirst }} - FoxyEGE.ru{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Генераторы заданий и вариантов, банк задач для подготовки к ЕГЭ по {{ subject|capfirst }}.{% endblock %}">
+    <meta property="og:image" content="{% static 'images/og-image.png' %}">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="FoxyEGE.ru">
+    <link rel="stylesheet" href="{% static 'css/new_base.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Стили для SVG-формул */
+        .task-text, .solution-text, .latex-formula {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+        }
+        .task-text svg, .solution-text svg, .latex-formula svg {
+            max-width: 100%;
+            height: auto;
+            vertical-align: middle;
+        }
+        .task-text svg.inline-formula,
+        .solution-text svg.inline-formula,
+        .latex-formula svg.inline-formula,
+        .task-text svg.display-formula,
+        .solution-text svg.display-formula,
+        .latex-formula svg.display-formula {
+            display: inline-block !important;
+            vertical-align: middle;
+        }
+        .task-text svg.complex-formula,
+        .solution-text svg.complex-formula,
+        .latex-formula svg.complex-formula {
+            display: block !important;
+            margin: 10px auto;
+            text-align: center;
+        }
+        .latex-error {
+            color: red;
+            font-style: italic;
+        }
+        .solution-step {
+            margin-bottom: 15px;
+        }
+        {% comment %} /* Стили для баннера cookie */
+        .cookie-consent-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #333;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            z-index: 1000;
+            display: none;
+        }
+        .cookie-consent-banner a {
+            color: #00f;
+            text-decoration: underline;
+        }
+        .cookie-consent-banner button {
+            margin: 0 10px;
+            padding: 5px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .cookie-consent-banner button.decline {
+            background-color: #f44336;
+        } {% endcomment %}
+        /* Стили для модального окна */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            position: relative;
+        }
+        .modal-content .close {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        /* Стили для социальных иконок в футере */
+        .social-section {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .social-label {
+            color: #333; /* Белый цвет для темного фона футера, измените на #333 для светлого */
+            font-size: 16px; /* Размер текста */
+            margin-bottom: 10px;
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 25px; /* Увеличенное расстояние между иконками */
+        }
+
+        .social-links a {
+            color: #333;
+            font-size: 32px;
+            transition: color 0.3s ease;
+        }
+
+        .social-links a:hover {
+            color: #ff9a8b;
+        }
+    </style>
+    {% block extra_styles %}{% endblock %}
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-container">
+            <div class="header-top">
+                <span class="burger-menu"><i class="fas fa-bars"></i></span>
+                <h1><a href="{% url 'tasks:subject_home' subject=subject|default:'math' %}" class="logo"><img src="{% static 'images/logo.png' %}" alt="FoxyEGE Logo"> FoxyEGE.ru</a></h1>
+                <nav class="header-nav-mobile">
+                    <div class="tools-item">
+                    <button class="tools-toggle toggle-button" aria-expanded="false">Инструменты</button>
+                    <ul class="tools-list">
+                        <li><a href="{% url 'tasks:task_list' subject=subject|default:'math' %}">Банк заданий</a></li>
+                        <li><a href="{% url 'tasks:generate_variant' subject=subject|default:'math' %}">Генератор вариантов</a></li>
+                        <li><a href="{% url 'tasks:generate_task' subject=subject|default:'math' %}">Генератор заданий</a></li>
+                    </ul>
+                </div>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'users:profile' %}?subject={{ subject|default:'math' }}" class="auth-link">Личный кабинет</a>
+                        <a href="{% url 'users:logout' %}">Выйти</a>
+                    {% endif %}
+                </nav>
+                <nav class="header-nav">
+                    <a href="{% url 'tasks:task_list' subject=subject|default:'math' %}">Банк заданий</a>
+                    <a href="{% url 'tasks:generate_variant' subject=subject|default:'math' %}">Генератор вариантов</a>
+                    <a href="{% url 'tasks:generate_task' subject=subject|default:'math' %}">Генератор заданий</a>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'users:profile' %}?subject={{ subject|default:'math' }}">Личный кабинет</a>
+                        <a href="{% url 'users:logout' %}">Выйти</a>
+                    {% else %}
+                        <a href="#" id="authButton">Авторизация</a>
+                    {% endif %}
+                </nav>
+            </div>
+            <div class="subject-display">
+                <span>Текущий предмет: {{ subject|capfirst }}</span>
+            </div>
+            <nav class="subjects-nav">
+                <button class="subjects-toggle">Выберите предмет</button>
+                <ul class="subjects-list">
+                    <li><a href="{% url 'tasks:subject_home' subject='math' %}" {% if subject == 'math' %}class="active"{% endif %}>Мат. профиль</a></li>
+                    <li><a href="{% url 'tasks:subject_home' subject='mathb' %}" {% if subject == 'mathb' %}class="active"{% endif %}>Мат. база</a></li>
+                    <li><a href="{% url 'tasks:subject_home' subject='rus' %}" {% if subject == 'rus' %}class="active"{% endif %}>Русский язык</a></li>
+                    <li><a href="{% url 'tasks:subject_home' subject='phys' %}" {% if subject == 'phys' %}class="active"{% endif %}>Физика</a></li>
+                    <li><a href="{% url 'tasks:subject_home' subject='chem' %}" {% if subject == 'chem' %}class="active"{% endif %}>Химия</a></li>
+                    <li><a href="{% url 'tasks:subject_home' subject='inf' %}" {% if subject == 'inf' %}class="active"{% endif %}>Информатика</a></li>
+                    <li><a href="{% url 'tasks:subject_home' subject='eng' %}" {% if subject == 'eng' %}class="active"{% endif %}>Английский язык</a></li>
+                    <li><a href="{% url 'tasks:subject_home' subject='bio' %}" {% if subject == 'bio' %}class="active"{% endif %}>Биология</a></li>
+                    <li><a href="{% url 'tasks:subject_home' subject='hist' %}" {% if subject == 'hist' %}class="active"{% endif %}>История</a></li>
+                    <li><a href="{% url 'tasks:subject_home' subject='soc' %}" {% if subject == 'soc' %}class="active"{% endif %}>Общество</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="content-wrapper">
+        <aside class="sidebar" id="sidebar">
+            <ul>
+                {% if user.is_authenticated %}
+                    <li><a href="{% url 'tasks:favorite_tasks' subject=subject|default:'math' %}">Избранное</a></li>
+                {% endif %}
+                <li><a href="#">ИИ-тесты</a></li>
+                <li><a href="#">ИИ-подготовка</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <span class="close">×</span>
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="login">Вход</button>
+                <button class="tab-btn" data-tab="register">Регистрация</button>
+            </div>
+            <div id="login-tab" class="tab-content active">
+                <h2>Вход</h2>
+                <form id="loginForm" method="post" action="{% url 'users:login' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <div class="form-group">
+                        <label for="username">Логин:</label>
+                        <input type="text" id="username" name="username" required>
+                        <span class="error-message" id="username-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Пароль:</label>
+                        <input type="password" id="password" name="password" required>
+                        <span class="error-message" id="password-error"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Войти</button>
+                    <p id="login-error" class="error-message"></p>
+                </form>
+            </div>
+            <div id="register-tab" class="tab-content">
+                <h2>Регистрация</h2>
+                <form id="registerForm" method="post" action="{% url 'users:register' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <div class="form-group">
+                        <label for="reg-username">Логин:</label>
+                        <input type="text" id="reg-username" name="username" required>
+                        <span class="error-message" id="username-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-email" data-optional="(опционально)">Email:</label>
+                        <input type="email" id="reg-email" name="email">
+                        <span class="error-message" id="email-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-password1">Пароль:</label>
+                        <input type="password" id="reg-password1" name="password1" required>
+                        <i class="fas fa-info-circle password-hint"></i>
+                        <span class="error-message" id="password1-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-password2">Подтверждение пароля:</label>
+                        <input type="password" id="reg-password2" name="password2" required>
+                        <span class="error-message" id="password2-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="role">Роль:</label>
+                        <select id="role" name="role" required>
+                            <option value="student" selected>Ученик</option>
+                            <option value="teacher">Учитель</option>
+                        </select>
+                        <span class="error-message" id="role-error"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+                    <p id="register-error" class="error-message"></p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cookie Consent Banner -->
+    {% comment %} {% if not request.COOKIES.cookieconsent_analytics %}
+    <div class="cookie-consent-banner" id="cookie-consent-banner">
+        <p>
+            Мы используем cookie для аналитики (Yandex Metrica), чтобы улучшить работу сайта.
+            <a href="{% url 'privacy_policy' %}">Подробнее</a>
+        </p>
+        <button onclick="acceptCookies()">Принять</button>
+        <button onclick="document.getElementById('cookie-settings-modal').style.display='block'">Настроить</button>
+    </div>
+
+    <!-- Модальное окно для настройки -->
+    <div id="cookie-settings-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" onclick="document.getElementById('cookie-settings-modal').style.display='none'">×</span>
+            <h2>Настройки cookie</h2>
+            <label>
+                <input type="checkbox" id="accept_analytics" checked>
+                Аналитика (Yandex Metrica) — помогает нам улучшать сайт.
+            </label>
+            <br>
+            <button onclick="saveCookieSettings()">Сохранить</button>
+            <button onclick="declineCookies()" class="decline">Отклонить</button>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Подключение Yandex Metrica -->
+    {% if request|has_cookie_consent:"analytics" %}
+    <script type="text/javascript">
+        console.log("Yandex Metrica загружается...");
+        (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+        (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+
+        ym(101554555, "init", {
+            clickmap: true,
+            trackLinks: true,
+            accurateTrackBounce: true,
+            webvisor: true
+        });
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/101554555" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    {% else %}
+    <script>
+        console.log("Yandex Metrica НЕ загружается, так как нет согласия на cookie.");
+    </script>
+    {% endif %} {% endcomment %}
+    <!-- JavaScript для управления cookie -->
+    <script>
+        {% comment %} document.addEventListener('DOMContentLoaded', function() {
+            // Показать баннер, если он есть
+            const cookieBanner = document.getElementById('cookie-consent-banner');
+            if (cookieBanner) {
+                cookieBanner.style.display = 'block';
+            }
+    
+            // Функции управления cookie
+            window.acceptCookies = function() {
+                console.log("acceptCookies вызвана");
+                document.cookie = "cookieconsent_analytics=accept; max-age=31536000; path=/";
+                loadYandexMetrica();
+                hideCookieBanner();
+            };
+    
+            window.declineCookies = function() {
+                console.log("declineCookies вызвана");
+                document.cookie = "cookieconsent_analytics=decline; max-age=31536000; path=/";
+                hideCookieBanner();
+            };
+    
+            window.saveCookieSettings = function() {
+                console.log("saveCookieSettings вызвана");
+                const acceptAnalytics = document.getElementById('accept_analytics');
+                if (acceptAnalytics) {
+                    document.cookie = `cookieconsent_analytics=${acceptAnalytics.checked ? 'accept' : 'decline'}; max-age=31536000; path=/`;
+                    if (acceptAnalytics.checked) {
+                        loadYandexMetrica();
+                    }
+                }
+                hideCookieBanner();
+            };
+    
+            function hideCookieBanner() {
+                const banner = document.getElementById('cookie-consent-banner');
+                const modal = document.getElementById('cookie-settings-modal');
+                if (banner) banner.style.display = 'none';
+                if (modal) modal.style.display = 'none';
+            }
+    
+            function loadYandexMetrica() {
+                if (window.ym) {
+                    console.log("Yandex Metrica уже загружена");
+                    return;
+                }
+                console.log("Yandex Metrica загружается...");
+                (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+                m[i].l=1*new Date();
+                for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+                k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+                (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+    
+                ym(101554555, "init", {
+                    clickmap: true,
+                    trackLinks: true,
+                    accurateTrackBounce: true,
+                    webvisor: true
+                });
+            }
+     {% endcomment %}
+        document.addEventListener('DOMContentLoaded', function() {
+            // Логи для отладки
+            console.log('JavaScript loaded');
+    
+            // Обновление позиции сайдбара
+            const header = document.querySelector('.site-header');
+            const sidebar = document.querySelector('.sidebar');
+            function updateSidebarPosition() {
+                if (header) {
+                    const headerHeight = header.offsetHeight;
+                    document.documentElement.style.setProperty('--header-height', `${headerHeight}px`);
+                    console.log(`Header height: ${headerHeight}px`);
+                }
+            }
+            updateSidebarPosition();
+            window.addEventListener('resize', updateSidebarPosition);
+    
+            // Бургер-меню
+            const burgerMenu = document.querySelector('.burger-menu');
+            if (burgerMenu) {
+                burgerMenu.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (sidebar) {
+                        sidebar.classList.toggle('active');
+                        console.log('Burger menu clicked, sidebar active:', sidebar.classList.contains('active'));
+                    }
+                });
+            } else {
+                console.error('Burger menu not found');
+            }
+    
+            // Закрытие сайдбара при клике вне его
+            document.addEventListener('click', function(e) {
+                if (sidebar && burgerMenu && !sidebar.contains(e.target) && !burgerMenu.contains(e.target)) {
+                    sidebar.classList.remove('active');
+                    console.log('Clicked outside, sidebar closed');
+                }
+            });
+    
+            // Переключение списка предметов
+            const subjectsToggle = document.querySelector('.subjects-toggle');
+            const subjectsList = document.querySelector('.subjects-list');
+            if (subjectsToggle && subjectsList) {
+                subjectsToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    subjectsList.classList.toggle('active');
+                    this.classList.toggle('active');
+                    updateSidebarPosition();
+                    console.log('Subjects toggle clicked, list active:', subjectsList.classList.contains('active'));
+                });
+            } else {
+                console.error('Subjects toggle or list not found');
+            }
+    
+            // Закрытие списка предметов при клике вне
+            document.addEventListener('click', function(e) {
+                if (subjectsList && subjectsToggle && !subjectsList.contains(e.target) && !subjectsToggle.contains(e.target)) {
+                    subjectsList.classList.remove('active');
+                    subjectsToggle.classList.remove('active');
+                    updateSidebarPosition();
+                    console.log('Clicked outside, subjects list closed');
+                }
+            });
+    
+            // Переключение списка инструментов
+            const toolsToggle = document.querySelector('.tools-toggle');
+            const toolsList = document.querySelector('.tools-list');
+            if (toolsToggle && toolsList) {
+                toolsToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    toolsList.classList.toggle('active');
+                    const isExpanded = toolsList.classList.contains('active');
+                    this.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+                    console.log('Tools toggle clicked, list active:', toolsList.classList.contains('active'));
+                });
+                document.addEventListener('click', function(e) {
+                    if (!toolsList.contains(e.target) && !toolsToggle.contains(e.target)) {
+                        toolsList.classList.remove('active');
+                        toolsToggle.setAttribute('aria-expanded', 'false');
+                        console.log('Clicked outside, tools list closed');
+                    }
+                });
+            } else {
+                console.error('Tools toggle or list not found');
+            }
+    
+            // Модальное окно авторизации
+            const modal = document.getElementById('authModal');
+            const authButton = document.getElementById('authButton');
+            const closeBtn = document.querySelector('.modal .close');
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const csrfToken = '{{ csrf_token }}';
+    
+            if (authButton) {
+                authButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (modal) {
+                        modal.style.display = 'block';
+                        console.log('Auth button clicked, modal opened');
+                    }
+                });
+            }
+    
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function() {
+                    if (modal) {
+                        modal.style.display = 'none';
+                        console.log('Close button clicked, modal closed');
+                    }
+                });
+            }
+    
+            if (modal) {
+                window.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        modal.style.display = 'none';
+                        console.log('Clicked outside modal, modal closed');
+                    }
+                });
+            }
+    
+            tabButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    tabButtons.forEach(b => b.classList.remove('active'));
+                    tabContents.forEach(c => c.style.display = 'none');
+                    this.classList.add('active');
+                    const tabContent = document.getElementById(this.dataset.tab + '-tab');
+                    if (tabContent) {
+                        tabContent.style.display = 'block';
+                        console.log(`Tab switched to ${this.dataset.tab}`);
+                    }
+                });
+            });
+    
+            if (loginForm) {
+                loginForm.addEventListener('submit', handleFormSubmit);
+            }
+            if (registerForm) {
+                registerForm.addEventListener('submit', handleFormSubmit);
+            }
+    
+            function handleFormSubmit(e) {
+                e.preventDefault();
+                const form = this;
+                const formData = new FormData(form);
+                const errorElement = form.id === 'loginForm' ? 'login-error' : 'register-error';
+    
+                document.querySelectorAll('.error-message').forEach(el => {
+                    el.style.display = 'none';
+                    el.textContent = '';
+                });
+    
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => {
+                    if (!response.ok) return response.json().then(data => { throw data; });
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success && data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                        console.log('Form submitted, redirecting to:', data.redirect_url);
+                    } else if (data.errors) {
+                        Object.keys(data.errors).forEach(field => {
+                            const errorEl = document.getElementById(`${field}-error`);
+                            if (errorEl) {
+                                let errors = Array.isArray(data.errors[field]) ?
+                                    data.errors[field].map(err => err.message || err) :
+                                    [data.errors[field].message || data.errors[field]];
+                                errorEl.textContent = errors.join(', ');
+                                errorEl.style.display = 'block';
+                                console.log(`Form error in ${field}:`, errors);
+                            }
+                        });
+                        const generalError = data.errors.__all__;
+                        if (generalError) {
+                            document.getElementById(errorElement).textContent = generalError.map(err => err.message).join(', ');
+                            document.getElementById(errorElement).style.display = 'block';
+                            console.log('General form error:', generalError);
+                        }
+                    }
+                })
+                .catch(error => {
+                    const errorEl = document.getElementById(errorElement);
+                    if (errorEl) {
+                        errorEl.textContent = error.error || 'Произошла ошибка';
+                        el.style.display = 'block';
+                        console.error('Form submission error:', error);
+                    }
+                });
+            }
+    
+            // Классификация SVG на основе data-latex-type
+            document.querySelectorAll('.task-text, .solution-text, .latex-formula').forEach(container => {
+                const svgs = container.querySelectorAll('svg');
+                svgs.forEach(svg => {
+                    const latexType = svg.getAttribute('data-latex-type') || 'inline';
+                    svg.classList.add(`${latexType}-formula`);
+                    console.log(`SVG classified as ${latexType}-formula`);
+                });
+            });
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+
+    <footer class="site-footer">
+        <p>© FoxyEGE.ru 2025</p>
+        {% comment %} <p><a href="{% url 'privacy_policy' %}">Политика конфиденциальности</a></p>
+        <p><a href="{% url 'delete_cookies' %}">Управление cookie</a></p> {% endcomment %}
+        {% comment %} <p><a href="{% url 'tasks:visit_statistics' subject=subject|default:'math' %}">Статистика посещений</a></p> {% endcomment %}
+        {% with visit=page_visit %}
+            {% if visit %}
+                <p>Просмотров этой страницы: </p>
+            {% endif %}
+        {% endwith %}
+        <div class="social-section">
+            <p class="social-label">Мы в соцсетях:</p>
+            <div class="social-links">
+                <a href="https://www.youtube.com/channel/UCT6nco_-4E5qikGpFTMQrGg" target="_blank" title="YouTube" aria-label="YouTube">
+                    <i class="fab fa-youtube"></i>
+                </a>
+                <a href="https://t.me/foxyege" target="_blank" title="Telegram" aria-label="Telegram">
+                    <i class="fab fa-telegram-plane"></i>
+                </a>
+                <a href="https://vk.com/foxyschoool" target="_blank" title="ВКонтакте" aria-label="ВКонтакте">
+                    <i class="fab fa-vk"></i>
+                </a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
